@@ -78,11 +78,15 @@ export default function NewTripScreen() {
     console.log('[NewTrip] Added new player inline:', player.id, name);
   }, [newPlayerName, newPlayerAvatar, newPlayerHairMeta, addPlayer]);
 
-  const canProceedStep1 = tripName.trim().length > 0 || true;
+  const canProceedStep1 = tripName.trim().length > 0;
   const canProceedStep2 = selectedPlayerIds.length >= 2;
 
   const handleNextStep = useCallback(() => {
     if (step === 1) {
+      if (!canProceedStep1) {
+        Alert.alert("Name Required", "Please enter a trip name before continuing.");
+        return;
+      }
       setStep(2);
     } else if (step === 2) {
       if (selectedPlayerIds.length < 2) {
@@ -91,7 +95,7 @@ export default function NewTripScreen() {
       }
       setStep(3);
     }
-  }, [step, selectedPlayerIds]);
+  }, [step, selectedPlayerIds, canProceedStep1]);
 
   const handlePrevStep = useCallback(() => {
     if (step === 2) setStep(1);
@@ -180,7 +184,7 @@ export default function NewTripScreen() {
             <MapPin size={20} color={Colors.brownMuted} />
             <TextInput style={styles.input} placeholder="e.g. Yellowstone Weekend" placeholderTextColor={Colors.textLight} value={tripName} onChangeText={setTripName} autoFocus returnKeyType="done" blurOnSubmit inputAccessoryViewID={KEYBOARD_ACCESSORY_ID} />
           </View>
-          <Pressable style={({ pressed }) => [styles.nextButton, pressed && styles.nextButtonPressed]} onPress={handleNextStep}>
+          <Pressable style={({ pressed }) => [styles.nextButton, pressed && styles.nextButtonPressed, !canProceedStep1 && styles.buttonDisabled]} onPress={handleNextStep} disabled={!canProceedStep1}>
             <Text style={styles.nextButtonText}>Next</Text>
             <ChevronRight size={18} color={Colors.white} />
           </Pressable>

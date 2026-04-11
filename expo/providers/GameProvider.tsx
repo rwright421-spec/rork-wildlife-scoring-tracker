@@ -27,16 +27,28 @@ export const [GameProvider, useGame] = createContextHook(() => {
   const dataQuery = useQuery({
     queryKey: ["gameData"],
     queryFn: async () => {
-      const stored = await AsyncStorage.getItem(STORAGE_KEY);
-      const onboardingDone = await AsyncStorage.getItem(ONBOARDING_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored) as GameState;
-        if (!parsed.animals || parsed.animals.length === 0) {
-          parsed.animals = [...DEFAULT_ANIMALS];
+      try {
+        const stored = await AsyncStorage.getItem(STORAGE_KEY);
+        const onboardingDone = await AsyncStorage.getItem(ONBOARDING_KEY);
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored) as GameState;
+            if (!parsed.animals || parsed.animals.length === 0) {
+              parsed.animals = [...DEFAULT_ANIMALS];
+            }
+            if (!Array.isArray(parsed.players)) parsed.players = [];
+            if (!Array.isArray(parsed.trips)) parsed.trips = [];
+            return { state: parsed, onboardingDone: onboardingDone === "true" || parsed.players.length > 0 };
+          } catch (parseError) {
+            console.error('[GameProvider] Failed to parse stored data, resetting to defaults:', parseError);
+            return { state: defaultState, onboardingDone: onboardingDone === "true" };
+          }
         }
-        return { state: parsed, onboardingDone: onboardingDone === "true" || parsed.players.length > 0 };
+        return { state: defaultState, onboardingDone: onboardingDone === "true" };
+      } catch (storageError) {
+        console.error('[GameProvider] Failed to load from AsyncStorage, using defaults:', storageError);
+        return { state: defaultState, onboardingDone: false };
       }
-      return { state: defaultState, onboardingDone: onboardingDone === "true" };
     },
   });
 
