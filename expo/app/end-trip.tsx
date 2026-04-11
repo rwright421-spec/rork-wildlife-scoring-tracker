@@ -19,7 +19,7 @@ export default function EndTripScreen() {
 
   React.useEffect(() => {
     if (currentTrip) {
-      console.log('[EndTrip] Loaded trip:', currentTrip.id, 'players:', currentTrip.players.length, currentTrip.players.map((p) => ({ id: p.playerId, pts: p.totalPoints })));
+      if (__DEV__) console.log('[EndTrip] Loaded trip:', currentTrip.id, 'players:', currentTrip.players.length, currentTrip.players.map((p) => ({ id: p.playerId, pts: p.totalPoints })));
     }
   }, [currentTrip]);
 

@@ -53,6 +53,9 @@ export default function ActiveTripScreen() {
   const [addPlayerModalVisible, setAddPlayerModalVisible] = useState(false);
   const [isCreatingNewPlayer, setIsCreatingNewPlayer] = useState(false);
   const [newPlayerName, setNewPlayerName] = useState("");
+  const [pointsError, setPointsError] = useState<string>("");
+  const [playerNameWarning, setPlayerNameWarning] = useState<string>("");
+  const [animalNameWarning, setAnimalNameWarning] = useState<string>("");
   const [newPlayerAvatar, setNewPlayerAvatar] = useState("🧑");
   const [newPlayerHairMeta, setNewPlayerHairMeta] = useState<PlayerHairMeta | undefined>(undefined);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
@@ -61,6 +64,30 @@ export default function ActiveTripScreen() {
   const celebrationScale = useRef(new Animated.Value(0)).current;
   const celebrationOpacity = useRef(new Animated.Value(0)).current;
   const celebrationTextY = useRef(new Animated.Value(20)).current;
+  const validatePoints = useCallback((value: string) => {
+    if (!value) { setPointsError(""); return; }
+    const num = parseInt(value, 10);
+    if (isNaN(num)) { setPointsError("Enter a valid number"); return; }
+    if (num < 1) { setPointsError("Minimum is 1"); return; }
+    if (num > 1000) { setPointsError("Maximum is 1000"); return; }
+    setPointsError("");
+  }, []);
+
+  const checkDuplicatePlayerName = useCallback((name: string) => {
+    const trimmed = name.trim().toLowerCase();
+    if (!trimmed) { setPlayerNameWarning(""); return; }
+    const existing = players.find((p) => p.name.trim().toLowerCase() === trimmed);
+    if (existing) { setPlayerNameWarning(`A player named "${existing.name}" already exists.`); } else { setPlayerNameWarning(""); }
+  }, [players]);
+
+  const checkDuplicateAnimalName = useCallback((name: string) => {
+    if (!currentTrip) return;
+    const trimmed = name.trim().toLowerCase();
+    if (!trimmed) { setAnimalNameWarning(""); return; }
+    const existing = tripAnimals.find((a) => a.name.trim().toLowerCase() === trimmed && (!editingAnimal || a.id !== editingAnimal.id));
+    if (existing) { setAnimalNameWarning(`An animal named "${existing.name}" already exists in this trip.`); } else { setAnimalNameWarning(""); }
+  }, [currentTrip, tripAnimals, editingAnimal]);
+
   const sortedPlayers = useMemo(() => {
     if (!currentTrip) return [];
     return [...currentTrip.players].sort((a, b) => b.totalPoints - a.totalPoints);
@@ -164,7 +191,7 @@ export default function ActiveTripScreen() {
             onPress: () => {
               if (Platform.OS !== "web") { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning); }
               deleteTrip(currentTrip.id);
-              console.log('[ActiveTrip] Deleted trip:', currentTrip.id);
+              if (__DEV__) console.log('[ActiveTrip] Deleted trip:', currentTrip.id);
               router.back();
             },
           },
@@ -191,7 +218,7 @@ export default function ActiveTripScreen() {
     if (!currentTrip) return;
     if (Platform.OS !== "web") { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }
     addPlayerToTrip(currentTrip.id, player.id);
-    console.log('[ActiveTrip] Added existing player to trip:', player.name);
+    if (__DEV__) console.log('[ActiveTrip] Added existing player to trip:', player.name);
     setAddPlayerModalVisible(false);
   }, [currentTrip, addPlayerToTrip]);
 
@@ -199,10 +226,11 @@ export default function ActiveTripScreen() {
     if (!currentTrip) return;
     const name = newPlayerName.trim();
     if (!name) { Alert.alert("Missing name", "Please enter a player name."); return; }
+    setPlayerNameWarning("");
     if (Platform.OS !== "web") { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); }
     const newPlayer = addPlayer(name, newPlayerAvatar, newPlayerHairMeta);
     addPlayerToTrip(currentTrip.id, newPlayer.id);
-    console.log('[ActiveTrip] Created new player and added to trip:', name);
+    if (__DEV__) console.log('[ActiveTrip] Created new player and added to trip:', name);
     setAddPlayerModalVisible(false);
   }, [currentTrip, newPlayerName, newPlayerAvatar, newPlayerHairMeta, addPlayer, addPlayerToTrip]);
 
@@ -242,7 +270,8 @@ export default function ActiveTripScreen() {
     const name = editName.trim();
     const pts = parseInt(editPoints, 10);
     if (!name) { Alert.alert("Missing name", "Please enter an animal name."); return; }
-    if (isNaN(pts) || pts < 1) { Alert.alert("Invalid points", "Points must be at least 1."); return; }
+    if (isNaN(pts) || pts < 1) { Alert.alert("Invalid points", "Points must be between 1 and 1000."); return; }
+    if (pts > 1000) { Alert.alert("Invalid points", "Points must be between 1 and 1000."); return; }
     if (Platform.OS !== "web") { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }
     if (isAddingNew) {
       addTripAnimal(currentTrip.id, name, editEmoji, pts);
@@ -252,6 +281,8 @@ export default function ActiveTripScreen() {
     setEditingAnimal(null);
     setIsAddingNew(false);
     setShowEmojiPicker(false);
+    setPointsError("");
+    setAnimalNameWarning("");
   }, [currentTrip, editName, editEmoji, editPoints, editingAnimal, isAddingNew, addTripAnimal, updateTripAnimal]);
 
   const handleRemovePlayerFromTrip = useCallback((playerId: string, playerName: string, totalPoints: number) => {
@@ -269,7 +300,7 @@ export default function ActiveTripScreen() {
         onPress: () => {
           if (Platform.OS !== "web") { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning); }
           removePlayerFromTrip(currentTrip.id, playerId);
-          console.log('[ActiveTrip] Removed player from trip:', playerId);
+          if (__DEV__) console.log('[ActiveTrip] Removed player from trip:', playerId);
         },
       },
     ]);
@@ -458,13 +489,15 @@ export default function ActiveTripScreen() {
                 <View style={styles.editFieldRow}>
                   <View style={styles.editFieldFlex}>
                     <Text style={styles.editFieldLabel}>Name</Text>
-                    <TextInput style={styles.editInput} value={editName} onChangeText={setEditName} placeholder="Animal name" placeholderTextColor={Colors.textLight} returnKeyType="done" blurOnSubmit inputAccessoryViewID={KEYBOARD_ACCESSORY_ID} />
+                    <TextInput style={styles.editInput} value={editName} onChangeText={(t) => { setEditName(t); checkDuplicateAnimalName(t); }} placeholder="Animal name" placeholderTextColor={Colors.textLight} returnKeyType="done" blurOnSubmit maxLength={20} inputAccessoryViewID={KEYBOARD_ACCESSORY_ID} />
                   </View>
                   <View style={styles.editFieldSmall}>
                     <Text style={styles.editFieldLabel}>Points</Text>
-                    <TextInput style={styles.editInput} value={editPoints} onChangeText={setEditPoints} keyboardType="number-pad" placeholder="5" placeholderTextColor={Colors.textLight} inputAccessoryViewID={KEYBOARD_ACCESSORY_ID} />
+                    <TextInput style={styles.editInput} value={editPoints} onChangeText={(t) => { setEditPoints(t); validatePoints(t); }} keyboardType="number-pad" placeholder="5" placeholderTextColor={Colors.textLight} inputAccessoryViewID={KEYBOARD_ACCESSORY_ID} />
                   </View>
                 </View>
+                {animalNameWarning ? <Text style={styles.warningText}>{animalNameWarning}</Text> : null}
+                {pointsError ? <Text style={styles.errorText}>{pointsError}</Text> : null}
                 <View style={styles.editFormActions}>
                   <Pressable onPress={cancelEdit} style={styles.editCancelBtn}><Text style={styles.editCancelBtnText}>Cancel</Text></Pressable>
                   <Pressable onPress={saveEdit} style={styles.editSaveBtn}><Check size={18} color={Colors.white} /><Text style={styles.editSaveBtnText}>Save</Text></Pressable>
@@ -529,10 +562,11 @@ export default function ActiveTripScreen() {
                 )}
                 <View>
                   <Text style={styles.editFieldLabel}>Name</Text>
-                  <TextInput style={styles.editInput} value={newPlayerName} onChangeText={setNewPlayerName} placeholder="Player name" placeholderTextColor={Colors.textLight} autoFocus returnKeyType="done" blurOnSubmit inputAccessoryViewID={KEYBOARD_ACCESSORY_ID} />
+                  <TextInput style={styles.editInput} value={newPlayerName} onChangeText={(t) => { setNewPlayerName(t); checkDuplicatePlayerName(t); }} placeholder="Player name" placeholderTextColor={Colors.textLight} autoFocus returnKeyType="done" blurOnSubmit maxLength={20} inputAccessoryViewID={KEYBOARD_ACCESSORY_ID} />
+                  {playerNameWarning ? <Text style={styles.warningText}>{playerNameWarning}</Text> : null}
                 </View>
                 <View style={styles.editFormActions}>
-                  <Pressable onPress={() => setIsCreatingNewPlayer(false)} style={styles.editCancelBtn}>
+                  <Pressable onPress={() => { setIsCreatingNewPlayer(false); setPlayerNameWarning(""); }} style={styles.editCancelBtn}>
                     <Text style={styles.editCancelBtnText}>{availablePlayers.length > 0 ? "Back" : "Cancel"}</Text>
                   </Pressable>
                   <Pressable onPress={handleCreateAndAddPlayer} style={styles.editSaveBtn}>
@@ -674,6 +708,8 @@ const styles = StyleSheet.create({
   editFieldSmall: { width: 90 },
   editFieldLabel: { fontSize: 13, fontWeight: "600" as const, color: Colors.brownMuted, marginBottom: 6 },
   editInput: { backgroundColor: Colors.white, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 16, color: Colors.brown, borderWidth: 1, borderColor: Colors.border },
+  warningText: { fontSize: 12, color: "#B8860B", marginBottom: 6, paddingLeft: 2 },
+  errorText: { fontSize: 12, color: Colors.danger, marginBottom: 6, paddingLeft: 2 },
   editFormActions: { flexDirection: "row", gap: 12, marginTop: 4 },
   editCancelBtn: { flex: 1, alignItems: "center", paddingVertical: 14, borderRadius: 12, backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.border },
   editCancelBtnText: { fontSize: 16, fontWeight: "600" as const, color: Colors.brownMuted },

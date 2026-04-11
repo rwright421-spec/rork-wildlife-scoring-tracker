@@ -40,6 +40,34 @@ export default function SettingsScreen() {
   const [editName, setEditName] = useState<string>("");
   const [editEmoji, setEditEmoji] = useState<string>("");
   const [editPoints, setEditPoints] = useState<string>("");
+  const [pointsError, setPointsError] = useState<string>("");
+  const [newPointsError, setNewPointsError] = useState<string>("");
+  const [playerNameWarning, setPlayerNameWarning] = useState<string>("");
+  const [animalNameWarning, setAnimalNameWarning] = useState<string>("");
+  const [editAnimalNameWarning, setEditAnimalNameWarning] = useState<string>("");
+
+  const validatePoints = useCallback((value: string, setError: (e: string) => void) => {
+    if (!value) { setError(""); return; }
+    const num = parseInt(value, 10);
+    if (isNaN(num)) { setError("Enter a valid number"); return; }
+    if (num < 1) { setError("Minimum is 1"); return; }
+    if (num > 1000) { setError("Maximum is 1000"); return; }
+    setError("");
+  }, []);
+
+  const checkDuplicatePlayerName = useCallback((name: string) => {
+    const trimmed = name.trim().toLowerCase();
+    if (!trimmed) { setPlayerNameWarning(""); return; }
+    const existing = players.find((p) => p.name.trim().toLowerCase() === trimmed);
+    if (existing) { setPlayerNameWarning(`A player named "${existing.name}" already exists.`); } else { setPlayerNameWarning(""); }
+  }, [players]);
+
+  const checkDuplicateAnimalName = useCallback((name: string, excludeId?: string) => {
+    const trimmed = name.trim().toLowerCase();
+    if (!trimmed) return "";
+    const existing = animals.find((a) => a.name.trim().toLowerCase() === trimmed && a.id !== excludeId);
+    return existing ? `An animal named "${existing.name}" already exists.` : "";
+  }, [animals]);
 
   const handleAddPlayer = useCallback(() => {
     const name = newPlayerName.trim();
@@ -52,6 +80,7 @@ export default function SettingsScreen() {
     setSelectedAvatar(AVATAR_OPTIONS[0]);
     setSelectedHairMeta(undefined);
     setShowAddPlayer(false);
+    setPlayerNameWarning("");
   }, [newPlayerName, selectedAvatar, selectedHairMeta, addPlayer]);
 
   const handleRemovePlayer = useCallback(
@@ -103,11 +132,12 @@ export default function SettingsScreen() {
       );
       return;
     }
-    if (isNaN(points) || points <= 0) {
-      Alert.alert(
-        "Invalid Points",
-        "Please enter a valid point value greater than 0."
-      );
+    if (isNaN(points) || points < 1) {
+      Alert.alert("Invalid Points", "Points must be between 1 and 1000.");
+      return;
+    }
+    if (points > 1000) {
+      Alert.alert("Invalid Points", "Points must be between 1 and 1000.");
       return;
     }
     addAnimal(name, emoji, points);
@@ -115,6 +145,8 @@ export default function SettingsScreen() {
     setNewAnimalEmoji(ANIMAL_EMOJI_OPTIONS[0]);
     setNewAnimalPoints("");
     setShowAddAnimal(false);
+    setNewPointsError("");
+    setAnimalNameWarning("");
   }, [newAnimalName, newAnimalEmoji, newAnimalPoints, addAnimal]);
 
   const handleRemoveAnimal = useCallback(
@@ -173,11 +205,17 @@ export default function SettingsScreen() {
       Alert.alert("Missing Info", "Name and emoji are required.");
       return;
     }
-    if (isNaN(points) || points <= 0) {
-      Alert.alert("Invalid Points", "Enter a valid point value greater than 0.");
+    if (isNaN(points) || points < 1) {
+      Alert.alert("Invalid Points", "Points must be between 1 and 1000.");
+      return;
+    }
+    if (points > 1000) {
+      Alert.alert("Invalid Points", "Points must be between 1 and 1000.");
       return;
     }
     editAnimal(editingAnimalId, name, emoji, points);
+    setPointsError("");
+    setEditAnimalNameWarning("");
     cancelEditing();
   }, [editingAnimalId, editName, editEmoji, editPoints, editAnimal, cancelEditing]);
 
@@ -208,12 +246,14 @@ export default function SettingsScreen() {
               placeholder="Player name"
               placeholderTextColor={Colors.textLight}
               value={newPlayerName}
-              onChangeText={setNewPlayerName}
+              onChangeText={(t) => { setNewPlayerName(t); checkDuplicatePlayerName(t); }}
               testID="player-name-input"
               returnKeyType="done"
               blurOnSubmit
+              maxLength={20}
               inputAccessoryViewID={KEYBOARD_ACCESSORY_ID}
             />
+            {playerNameWarning ? <Text style={styles.warningText}>{playerNameWarning}</Text> : null}
             <AvatarPicker
               options={AVATAR_OPTIONS}
               selected={selectedAvatar}
@@ -291,9 +331,10 @@ export default function SettingsScreen() {
                 placeholder="Animal name"
                 placeholderTextColor={Colors.textLight}
                 value={newAnimalName}
-                onChangeText={setNewAnimalName}
+                onChangeText={(t) => { setNewAnimalName(t); setAnimalNameWarning(checkDuplicateAnimalName(t)); }}
                 returnKeyType="done"
                 blurOnSubmit
+                maxLength={20}
                 inputAccessoryViewID={KEYBOARD_ACCESSORY_ID}
               />
               <TextInput
@@ -301,11 +342,13 @@ export default function SettingsScreen() {
                 placeholder="Pts"
                 placeholderTextColor={Colors.textLight}
                 value={newAnimalPoints}
-                onChangeText={setNewAnimalPoints}
+                onChangeText={(t) => { setNewAnimalPoints(t); validatePoints(t, setNewPointsError); }}
                 keyboardType="number-pad"
                 inputAccessoryViewID={KEYBOARD_ACCESSORY_ID}
               />
             </View>
+            {animalNameWarning ? <Text style={styles.warningText}>{animalNameWarning}</Text> : null}
+            {newPointsError ? <Text style={styles.errorText}>{newPointsError}</Text> : null}
             <Pressable
               style={({ pressed }) => [
                 styles.confirmBtn,
@@ -342,9 +385,10 @@ export default function SettingsScreen() {
                     placeholder="Animal name"
                     placeholderTextColor={Colors.textLight}
                     value={editName}
-                    onChangeText={setEditName}
+                    onChangeText={(t) => { setEditName(t); setEditAnimalNameWarning(checkDuplicateAnimalName(t, editingAnimalId ?? undefined)); }}
                     returnKeyType="done"
                     blurOnSubmit
+                    maxLength={20}
                     inputAccessoryViewID={KEYBOARD_ACCESSORY_ID}
                   />
                   <TextInput
@@ -352,11 +396,13 @@ export default function SettingsScreen() {
                     placeholder="Pts"
                     placeholderTextColor={Colors.textLight}
                     value={editPoints}
-                    onChangeText={setEditPoints}
+                    onChangeText={(t) => { setEditPoints(t); validatePoints(t, setPointsError); }}
                     keyboardType="number-pad"
                     inputAccessoryViewID={KEYBOARD_ACCESSORY_ID}
                   />
                 </View>
+                {editAnimalNameWarning ? <Text style={styles.warningText}>{editAnimalNameWarning}</Text> : null}
+                {pointsError ? <Text style={styles.errorText}>{pointsError}</Text> : null}
                 <View style={styles.editActions}>
                   <Pressable
                     style={({ pressed }) => [
@@ -571,6 +617,8 @@ const styles = StyleSheet.create({
   emojiOptionText: { fontSize: 22 },
   flexInput: { flex: 1 },
   pointsInput: { width: 72, textAlign: "center" },
+  warningText: { fontSize: 12, color: "#B8860B", marginBottom: 6, marginTop: -4, paddingLeft: 2 },
+  errorText: { fontSize: 12, color: Colors.danger, marginBottom: 6, marginTop: -4, paddingLeft: 2 },
   editCard: {
     backgroundColor: Colors.white,
     borderRadius: 16,

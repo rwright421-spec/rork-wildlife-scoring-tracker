@@ -193,6 +193,7 @@ export default function OnboardingScreen() {
               testID="onboarding-player-name-input"
               returnKeyType="done"
               blurOnSubmit
+              maxLength={20}
               inputAccessoryViewID={KEYBOARD_ACCESSORY_ID}
             />
             <AvatarPicker

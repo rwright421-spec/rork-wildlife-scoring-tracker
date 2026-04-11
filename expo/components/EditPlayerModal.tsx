@@ -53,7 +53,7 @@ export default function EditPlayerModal({
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    console.log("[EditPlayerModal] Saving player:", player.id, "name:", trimmed, "avatar:", avatar);
+    if (__DEV__) console.log("[EditPlayerModal] Saving player:", player.id, "name:", trimmed, "avatar:", avatar);
     onSave(player.id, trimmed, avatar, hairMeta);
     onClose();
   }, [player, name, avatar, hairMeta, onSave, onClose]);
@@ -100,6 +100,7 @@ export default function EditPlayerModal({
             placeholderTextColor={Colors.textLight}
             returnKeyType="done"
             blurOnSubmit
+            maxLength={20}
             inputAccessoryViewID={KEYBOARD_ACCESSORY_ID}
             testID="edit-player-name-input"
           />

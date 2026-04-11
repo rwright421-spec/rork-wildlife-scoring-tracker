@@ -195,7 +195,7 @@ export default function AvatarPicker({
         setSelectedHairColorIdx(0);
         setCurrentStep("skin");
         setCustomizerVisible(true);
-        console.log("[AvatarPicker] Opened customizer for:", base, "gender:", getEmojiGender(base));
+        if (__DEV__) console.log("[AvatarPicker] Opened customizer for:", base, "gender:", getEmojiGender(base));
       } else {
         onSelect(emoji, undefined);
       }
@@ -212,7 +212,7 @@ export default function AvatarPicker({
         const finalEmoji = buildEmoji(customizerBase, skinMod, "");
         onSelect(finalEmoji, undefined);
         setCustomizerVisible(false);
-        console.log("[AvatarPicker] Selected (no hair):", finalEmoji);
+        if (__DEV__) console.log("[AvatarPicker] Selected (no hair):", finalEmoji);
       }
     } else if (currentStep === "hairstyle") {
       setCurrentStep("haircolor");
@@ -245,7 +245,7 @@ export default function AvatarPicker({
 
     onSelect(previewEmoji, meta);
     setCustomizerVisible(false);
-    console.log("[AvatarPicker] Final selection:", previewEmoji, "meta:", meta);
+    if (__DEV__) console.log("[AvatarPicker] Final selection:", previewEmoji, "meta:", meta);
   }, [previewEmoji, onSelect, selectedHairColorIdx, selectedHairStyleIdx, hairStyles]);
 
   const handleCancel = useCallback(() => {
@@ -384,7 +384,7 @@ export default function AvatarPicker({
                         ]}
                         onPress={() => {
                           setSelectedHairStyleIdx(index);
-                          console.log("[AvatarPicker] Selected hair style:", style.label, "preview:", stylePreview);
+                          if (__DEV__) console.log("[AvatarPicker] Selected hair style:", style.label, "preview:", stylePreview);
                         }}
                       >
                         <Text style={styles.hairStyleIcon}>{stylePreview}</Text>
@@ -424,7 +424,7 @@ export default function AvatarPicker({
                         ]}
                         onPress={() => {
                           setSelectedHairColorIdx(globalIdx);
-                          console.log("[AvatarPicker] Selected hair color:", color.label);
+                          if (__DEV__) console.log("[AvatarPicker] Selected hair color:", color.label);
                         }}
                       >
                         {color.hex ? (
@@ -468,7 +468,7 @@ export default function AvatarPicker({
                         ]}
                         onPress={() => {
                           setSelectedHairColorIdx(globalIdx);
-                          console.log("[AvatarPicker] Selected fashion hair color:", color.label);
+                          if (__DEV__) console.log("[AvatarPicker] Selected fashion hair color:", color.label);
                         }}
                       >
                         <View style={[styles.colorDot, { backgroundColor: color.hex }]}>

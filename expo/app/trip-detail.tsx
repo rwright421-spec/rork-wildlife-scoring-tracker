@@ -16,7 +16,7 @@ export default function TripDetailScreen() {
 
   React.useEffect(() => {
     if (trip) {
-      console.log('[TripDetail] Showing trip:', trip.id, 'players:', trip.players.length, trip.players.map((p) => p.playerId));
+      if (__DEV__) console.log('[TripDetail] Showing trip:', trip.id, 'players:', trip.players.length, trip.players.map((p) => p.playerId));
     }
   }, [trip]);
 

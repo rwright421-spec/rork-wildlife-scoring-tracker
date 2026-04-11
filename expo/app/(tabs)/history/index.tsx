@@ -108,7 +108,7 @@ export default function HistoryScreen() {
           onPress: () => {
             if (Platform.OS !== "web") { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning); }
             deleteTrip(trip.id);
-            console.log('[History] Deleted completed trip:', trip.id, trip.name);
+            if (__DEV__) console.log('[History] Deleted completed trip:', trip.id, trip.name);
           },
         },
       ]

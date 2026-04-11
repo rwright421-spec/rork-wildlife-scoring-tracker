@@ -64,7 +64,7 @@ export default function TripSummaryScreen() {
 
   useEffect(() => {
     if (trip) {
-      console.log('[TripSummary] Showing trip:', trip.id, 'players:', trip.players.length, trip.players.map((p) => p.playerId));
+      if (__DEV__) console.log('[TripSummary] Showing trip:', trip.id, 'players:', trip.players.length, trip.players.map((p) => p.playerId));
     }
   }, [trip]);
 
@@ -138,10 +138,10 @@ export default function TripSummaryScreen() {
         quality: 1,
         result: "tmpfile",
       });
-      console.log("Captured summary card:", uri);
+      if (__DEV__) console.log("Captured summary card:", uri);
 
       if (Platform.OS === "web") {
-        console.log("Web sharing not fully supported for images");
+        if (__DEV__) console.log("Web sharing not fully supported for images");
         setSharing(false);
         return;
       }
@@ -154,7 +154,7 @@ export default function TripSummaryScreen() {
         });
       }
     } catch (err) {
-      console.log("Share error:", err);
+      if (__DEV__) console.log("Share error:", err);
     } finally {
       setSharing(false);
     }

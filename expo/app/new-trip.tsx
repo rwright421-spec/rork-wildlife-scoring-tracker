@@ -7,7 +7,7 @@ import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, Vi
 import Colors from "@/constants/colors";
 import { ANIMAL_EMOJI_OPTIONS, AVATAR_OPTIONS } from "@/constants/animals";
 import { useGame } from "@/providers/GameProvider";
-import { Animal, PlayerHairMeta } from "@/types";
+import { Animal, Player, PlayerHairMeta } from "@/types";
 import { KeyboardAccessory, KEYBOARD_ACCESSORY_ID } from "@/components/KeyboardDoneBar";
 import AvatarPicker from "@/components/AvatarPicker";
 import PlayerAvatar from "@/components/PlayerAvatar";
@@ -39,7 +39,7 @@ export default function NewTripScreen() {
           return parsed.map((a) => ({ ...a }));
         }
       } catch (e) {
-        console.log("Failed to parse repeat animals:", e);
+        if (__DEV__) console.log("Failed to parse repeat animals:", e);
       }
     }
     return animals.map((a) => ({ ...a }));
@@ -58,6 +58,34 @@ export default function NewTripScreen() {
   const [editName, setEditName] = useState<string>("");
   const [editEmoji, setEditEmoji] = useState<string>("");
   const [editPoints, setEditPoints] = useState<string>("");
+  const [pointsError, setPointsError] = useState<string>("");
+  const [newPointsError, setNewPointsError] = useState<string>("");
+  const [playerNameWarning, setPlayerNameWarning] = useState<string>("");
+  const [animalNameWarning, setAnimalNameWarning] = useState<string>("");
+  const [editAnimalNameWarning, setEditAnimalNameWarning] = useState<string>("");
+
+  const validatePoints = useCallback((value: string, setError: (e: string) => void) => {
+    if (!value) { setError(""); return; }
+    const num = parseInt(value, 10);
+    if (isNaN(num)) { setError("Enter a valid number"); return; }
+    if (num < 1) { setError("Minimum is 1"); return; }
+    if (num > 1000) { setError("Maximum is 1000"); return; }
+    setError("");
+  }, []);
+
+  const checkDuplicatePlayerName = useCallback((name: string) => {
+    const trimmed = name.trim().toLowerCase();
+    if (!trimmed) { setPlayerNameWarning(""); return; }
+    const existing = players.find((p: Player) => p.name.trim().toLowerCase() === trimmed);
+    if (existing) { setPlayerNameWarning(`A player named "${existing.name}" already exists.`); } else { setPlayerNameWarning(""); }
+  }, [players]);
+
+  const checkDuplicateAnimalName = useCallback((name: string, excludeId?: string) => {
+    const trimmed = name.trim().toLowerCase();
+    if (!trimmed) return "";
+    const existing = tripAnimals.find((a) => a.name.trim().toLowerCase() === trimmed && a.id !== excludeId);
+    return existing ? `An animal named "${existing.name}" already exists in this trip.` : "";
+  }, [tripAnimals]);
 
   const togglePlayer = useCallback((playerId: string) => {
     setSelectedPlayerIds((prev) => prev.includes(playerId) ? prev.filter((id) => id !== playerId) : [...prev, playerId]);
@@ -75,7 +103,8 @@ export default function NewTripScreen() {
     setNewPlayerAvatar(AVATAR_OPTIONS[0]);
     setNewPlayerHairMeta(undefined);
     setShowAddPlayer(false);
-    console.log('[NewTrip] Added new player inline:', player.id, name);
+    setPlayerNameWarning("");
+    if (__DEV__) console.log('[NewTrip] Added new player inline:', player.id, name);
   }, [newPlayerName, newPlayerAvatar, newPlayerHairMeta, addPlayer]);
 
   const canProceedStep1 = tripName.trim().length > 0;
@@ -115,13 +144,16 @@ export default function NewTripScreen() {
     const name = newAnimalName.trim();
     const points = parseInt(newAnimalPoints, 10);
     if (!name) { Alert.alert("Missing Info", "Please enter a name for the animal."); return; }
-    if (isNaN(points) || points <= 0) { Alert.alert("Invalid Points", "Enter a valid point value greater than 0."); return; }
+    if (isNaN(points) || points < 1) { Alert.alert("Invalid Points", "Points must be between 1 and 1000."); return; }
+    if (points > 1000) { Alert.alert("Invalid Points", "Points must be between 1 and 1000."); return; }
     const animal: Animal = { id: generateId(), name, emoji: newAnimalEmoji, points, isDefault: false };
     setTripAnimals((prev) => [...prev, animal]);
     setNewAnimalName("");
     setNewAnimalEmoji(ANIMAL_EMOJI_OPTIONS[0]);
     setNewAnimalPoints("");
     setShowAddAnimal(false);
+    setNewPointsError("");
+    setAnimalNameWarning("");
   }, [newAnimalName, newAnimalEmoji, newAnimalPoints]);
 
   const handleRemoveAnimal = useCallback((animalId: string) => {
@@ -149,8 +181,11 @@ export default function NewTripScreen() {
     const name = editName.trim();
     const points = parseInt(editPoints, 10);
     if (!name) { Alert.alert("Missing Info", "Name is required."); return; }
-    if (isNaN(points) || points <= 0) { Alert.alert("Invalid Points", "Enter a valid point value greater than 0."); return; }
+    if (isNaN(points) || points < 1) { Alert.alert("Invalid Points", "Points must be between 1 and 1000."); return; }
+    if (points > 1000) { Alert.alert("Invalid Points", "Points must be between 1 and 1000."); return; }
     setTripAnimals((prev) => prev.map((a) => a.id === editingAnimalId ? { ...a, name, emoji: editEmoji, points } : a));
+    setPointsError("");
+    setEditAnimalNameWarning("");
     cancelEditing();
   }, [editingAnimalId, editName, editEmoji, editPoints, cancelEditing]);
 
@@ -182,7 +217,7 @@ export default function NewTripScreen() {
         <View style={styles.section}>
           <View style={styles.inputRow}>
             <MapPin size={20} color={Colors.brownMuted} />
-            <TextInput style={styles.input} placeholder="e.g. Yellowstone Weekend" placeholderTextColor={Colors.textLight} value={tripName} onChangeText={setTripName} autoFocus returnKeyType="done" blurOnSubmit inputAccessoryViewID={KEYBOARD_ACCESSORY_ID} />
+            <TextInput style={styles.input} placeholder="e.g. Yellowstone Weekend" placeholderTextColor={Colors.textLight} value={tripName} onChangeText={setTripName} autoFocus returnKeyType="done" blurOnSubmit maxLength={30} inputAccessoryViewID={KEYBOARD_ACCESSORY_ID} />
           </View>
           <Pressable style={({ pressed }) => [styles.nextButton, pressed && styles.nextButtonPressed, !canProceedStep1 && styles.buttonDisabled]} onPress={handleNextStep} disabled={!canProceedStep1}>
             <Text style={styles.nextButtonText}>Next</Text>
@@ -214,12 +249,14 @@ export default function NewTripScreen() {
                 placeholder="Player name"
                 placeholderTextColor={Colors.textLight}
                 value={newPlayerName}
-                onChangeText={setNewPlayerName}
+                onChangeText={(t) => { setNewPlayerName(t); checkDuplicatePlayerName(t); }}
                 autoFocus
                 returnKeyType="done"
                 blurOnSubmit
+                maxLength={20}
                 inputAccessoryViewID={KEYBOARD_ACCESSORY_ID}
               />
+              {playerNameWarning ? <Text style={styles.warningText}>{playerNameWarning}</Text> : null}
               <AvatarPicker
                 options={AVATAR_OPTIONS}
                 selected={newPlayerAvatar}
@@ -286,9 +323,11 @@ export default function NewTripScreen() {
                     ))}
                   </View>
                   <View style={styles.animalFormRow}>
-                    <TextInput style={[styles.formInput, styles.flexInput]} placeholder="Animal name" placeholderTextColor={Colors.textLight} value={editName} onChangeText={setEditName} returnKeyType="done" blurOnSubmit inputAccessoryViewID={KEYBOARD_ACCESSORY_ID} />
-                    <TextInput style={[styles.formInput, styles.pointsInput]} placeholder="Pts" placeholderTextColor={Colors.textLight} value={editPoints} onChangeText={setEditPoints} keyboardType="number-pad" inputAccessoryViewID={KEYBOARD_ACCESSORY_ID} />
+                    <TextInput style={[styles.formInput, styles.flexInput]} placeholder="Animal name" placeholderTextColor={Colors.textLight} value={editName} onChangeText={(t) => { setEditName(t); setEditAnimalNameWarning(checkDuplicateAnimalName(t, editingAnimalId ?? undefined)); }} returnKeyType="done" blurOnSubmit maxLength={20} inputAccessoryViewID={KEYBOARD_ACCESSORY_ID} />
+                    <TextInput style={[styles.formInput, styles.pointsInput]} placeholder="Pts" placeholderTextColor={Colors.textLight} value={editPoints} onChangeText={(t) => { setEditPoints(t); validatePoints(t, setPointsError); }} keyboardType="number-pad" inputAccessoryViewID={KEYBOARD_ACCESSORY_ID} />
                   </View>
+                  {editAnimalNameWarning ? <Text style={styles.warningText}>{editAnimalNameWarning}</Text> : null}
+                  {pointsError ? <Text style={styles.errorText}>{pointsError}</Text> : null}
                   <View style={styles.editActions}>
                     <Pressable style={({ pressed }) => [styles.editActionBtn, styles.cancelBtn, pressed && styles.cancelBtnPressed]} onPress={cancelEditing}>
                       <X size={16} color={Colors.brownMuted} />
@@ -329,11 +368,13 @@ export default function NewTripScreen() {
                 ))}
               </View>
               <View style={styles.animalFormRow}>
-                <TextInput style={[styles.formInput, styles.flexInput]} placeholder="Animal name" placeholderTextColor={Colors.textLight} value={newAnimalName} onChangeText={setNewAnimalName} returnKeyType="done" blurOnSubmit inputAccessoryViewID={KEYBOARD_ACCESSORY_ID} />
-                <TextInput style={[styles.formInput, styles.pointsInput]} placeholder="Pts" placeholderTextColor={Colors.textLight} value={newAnimalPoints} onChangeText={setNewAnimalPoints} keyboardType="number-pad" inputAccessoryViewID={KEYBOARD_ACCESSORY_ID} />
+                <TextInput style={[styles.formInput, styles.flexInput]} placeholder="Animal name" placeholderTextColor={Colors.textLight} value={newAnimalName} onChangeText={(t) => { setNewAnimalName(t); setAnimalNameWarning(checkDuplicateAnimalName(t)); }} returnKeyType="done" blurOnSubmit maxLength={20} inputAccessoryViewID={KEYBOARD_ACCESSORY_ID} />
+                <TextInput style={[styles.formInput, styles.pointsInput]} placeholder="Pts" placeholderTextColor={Colors.textLight} value={newAnimalPoints} onChangeText={(t) => { setNewAnimalPoints(t); validatePoints(t, setNewPointsError); }} keyboardType="number-pad" inputAccessoryViewID={KEYBOARD_ACCESSORY_ID} />
               </View>
+              {animalNameWarning ? <Text style={styles.warningText}>{animalNameWarning}</Text> : null}
+              {newPointsError ? <Text style={styles.errorText}>{newPointsError}</Text> : null}
               <View style={styles.editActions}>
-                <Pressable style={({ pressed }) => [styles.editActionBtn, styles.cancelBtn, pressed && styles.cancelBtnPressed]} onPress={() => setShowAddAnimal(false)}>
+                <Pressable style={({ pressed }) => [styles.editActionBtn, styles.cancelBtn, pressed && styles.cancelBtnPressed]} onPress={() => { setShowAddAnimal(false); setNewPointsError(""); setAnimalNameWarning(""); }}>
                   <X size={16} color={Colors.brownMuted} />
                   <Text style={styles.cancelBtnText}>Cancel</Text>
                 </Pressable>
@@ -432,6 +473,8 @@ const styles = StyleSheet.create({
   flexInput: { flex: 1 },
   pointsInput: { width: 70, textAlign: "center" },
   editCard: { backgroundColor: Colors.white, borderRadius: 16, padding: 16, marginBottom: 8, borderWidth: 2, borderColor: Colors.primaryLight },
+  warningText: { fontSize: 12, color: "#B8860B", marginBottom: 6, marginTop: -4, paddingLeft: 2 },
+  errorText: { fontSize: 12, color: Colors.danger, marginBottom: 6, marginTop: -4, paddingLeft: 2 },
   editActions: { flexDirection: "row", gap: 10, marginTop: 2 },
   editActionBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 11, borderRadius: 12 },
   cancelBtn: { backgroundColor: Colors.cream, borderWidth: 1, borderColor: Colors.border },

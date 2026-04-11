@@ -6,7 +6,7 @@ export function redirectSystemPath({
   path: string;
   initial: boolean;
 }) {
-  console.log("[Wildlife Spotter] redirectSystemPath", path, initial);
+  if (__DEV__) console.log("[Wildlife Spotter] redirectSystemPath", path, initial);
   if (initial) {
     return "/";
   }

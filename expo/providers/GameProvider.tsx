@@ -40,13 +40,13 @@ export const [GameProvider, useGame] = createContextHook(() => {
             if (!Array.isArray(parsed.trips)) parsed.trips = [];
             return { state: parsed, onboardingDone: onboardingDone === "true" || parsed.players.length > 0 };
           } catch (parseError) {
-            console.error('[GameProvider] Failed to parse stored data, resetting to defaults:', parseError);
+            if (__DEV__) console.error('[GameProvider] Failed to parse stored data, resetting to defaults:', parseError);
             return { state: defaultState, onboardingDone: onboardingDone === "true" };
           }
         }
         return { state: defaultState, onboardingDone: onboardingDone === "true" };
       } catch (storageError) {
-        console.error('[GameProvider] Failed to load from AsyncStorage, using defaults:', storageError);
+        if (__DEV__) console.error('[GameProvider] Failed to load from AsyncStorage, using defaults:', storageError);
         return { state: defaultState, onboardingDone: false };
       }
     },
@@ -62,9 +62,9 @@ export const [GameProvider, useGame] = createContextHook(() => {
   const saveToStorage = useCallback(async (newState: GameState) => {
     try {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
-      console.log('[GameProvider] State saved to AsyncStorage');
+      if (__DEV__) console.log('[GameProvider] State saved to AsyncStorage');
     } catch (error) {
-      console.error('[GameProvider] Failed to save state:', error);
+      if (__DEV__) console.error('[GameProvider] Failed to save state:', error);
     }
   }, []);
 
@@ -90,7 +90,7 @@ export const [GameProvider, useGame] = createContextHook(() => {
 
   const updatePlayer = useCallback(
     (playerId: string, name: string, avatar: string, hairMeta?: PlayerHairMeta) => {
-      console.log('[GameProvider] Updating player:', playerId, 'name:', name, 'avatar:', avatar, 'hairMeta:', hairMeta);
+      if (__DEV__) console.log('[GameProvider] Updating player:', playerId, 'name:', name, 'avatar:', avatar, 'hairMeta:', hairMeta);
       updateState((prev) => ({
         ...prev,
         players: prev.players.map((p) =>
@@ -110,7 +110,7 @@ export const [GameProvider, useGame] = createContextHook(() => {
           if (!trip.isActive) return trip;
           const hasPlayer = trip.players.some((tp) => tp.playerId === playerId);
           if (!hasPlayer) return trip;
-          console.log('[GameProvider] Removing player', playerId, 'from active trip', trip.id);
+          if (__DEV__) console.log('[GameProvider] Removing player', playerId, 'from active trip', trip.id);
           return {
             ...trip,
             players: trip.players.filter((tp) => tp.playerId !== playerId),
@@ -240,7 +240,7 @@ export const [GameProvider, useGame] = createContextHook(() => {
       updateState((prev) => {
         const tripToEnd = prev.trips.find((t) => t.id === tripId);
         if (tripToEnd) {
-          console.log('[GameProvider] Ending trip:', tripId, 'with', tripToEnd.players.length, 'players:', tripToEnd.players.map((p) => p.playerId));
+          if (__DEV__) console.log('[GameProvider] Ending trip:', tripId, 'with', tripToEnd.players.length, 'players:', tripToEnd.players.map((p) => p.playerId));
         }
         return {
           ...prev,
@@ -348,7 +348,7 @@ export const [GameProvider, useGame] = createContextHook(() => {
 
   const removePlayerFromTrip = useCallback(
     (tripId: string, playerId: string) => {
-      console.log('[GameProvider] Removing player', playerId, 'from trip', tripId);
+      if (__DEV__) console.log('[GameProvider] Removing player', playerId, 'from trip', tripId);
       updateState((prev) => ({
         ...prev,
         trips: prev.trips.map((trip) => {
@@ -365,7 +365,7 @@ export const [GameProvider, useGame] = createContextHook(() => {
 
   const deleteTrip = useCallback(
     (tripId: string) => {
-      console.log('[GameProvider] Deleting trip:', tripId);
+      if (__DEV__) console.log('[GameProvider] Deleting trip:', tripId);
       updateState((prev) => ({
         ...prev,
         trips: prev.trips.filter((t) => t.id !== tripId),
