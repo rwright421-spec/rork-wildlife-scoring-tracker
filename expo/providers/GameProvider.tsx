@@ -1,7 +1,7 @@
 import createContextHook from "@nkzw/create-context-hook";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { DEFAULT_ANIMALS } from "@/constants/animals";
 import { Animal, GameState, Player, PlayerHairMeta, PlayerSightings, Trip, TripPlayer } from "@/types";
@@ -59,7 +59,10 @@ export const [GameProvider, useGame] = createContextHook(() => {
     }
   }, [dataQuery.data]);
 
-  const saveToStorage = useCallback(async (newState: GameState) => {
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingStateRef = useRef<GameState | null>(null);
+
+  const flushToStorage = useCallback(async (newState: GameState) => {
     try {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
       if (__DEV__) console.log('[GameProvider] State saved to AsyncStorage');
@@ -68,15 +71,40 @@ export const [GameProvider, useGame] = createContextHook(() => {
     }
   }, []);
 
+  const debouncedSave = useCallback((newState: GameState) => {
+    pendingStateRef.current = newState;
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+    }
+    saveTimerRef.current = setTimeout(() => {
+      if (pendingStateRef.current) {
+        flushToStorage(pendingStateRef.current);
+        pendingStateRef.current = null;
+      }
+      saveTimerRef.current = null;
+    }, 300);
+  }, [flushToStorage]);
+
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+        if (pendingStateRef.current) {
+          flushToStorage(pendingStateRef.current);
+        }
+      }
+    };
+  }, [flushToStorage]);
+
   const updateState = useCallback(
     (updater: (prev: GameState) => GameState) => {
       setState((prev) => {
         const next = updater(prev);
-        saveToStorage(next);
+        debouncedSave(next);
         return next;
       });
     },
-    [saveToStorage]
+    [debouncedSave]
   );
 
   const addPlayer = useCallback(
@@ -458,32 +486,32 @@ export const [GameProvider, useGame] = createContextHook(() => {
 });
 
 export function usePlayerStats() {
-  const { players, trips, completedTrips, activeTrips } = useGame();
+  const { players, completedTrips, activeTrips } = useGame();
 
-  return useMemo(() => {
-    const activeTripCount = activeTrips.length;
+  const completedStatsMap = useMemo(() => {
+    const map = new Map<string, {
+      totalPoints: number;
+      totalSightings: { [animalId: string]: number };
+      totalDays: number;
+      wins: number;
+      tripCount: number;
+    }>();
 
-    const stats = players.map((player) => {
-      const playerCompletedTrips = completedTrips.filter((t) =>
-        t.players.some((tp) => tp.playerId === player.id)
-      );
-      const playerActiveTrips = activeTrips.filter((t) =>
-        t.players.some((tp) => tp.playerId === player.id)
-      );
-
+    players.forEach((player) => {
       let totalPoints = 0;
       let totalSightings: { [animalId: string]: number } = {};
       let totalDays = 0;
       let wins = 0;
+      let tripCount = 0;
 
-      playerCompletedTrips.forEach((trip) => {
+      completedTrips.forEach((trip) => {
         const tp = trip.players.find((p) => p.playerId === player.id);
-        if (tp) {
-          totalPoints += tp.totalPoints;
-          Object.entries(tp.sightings).forEach(([animalId, count]) => {
-            totalSightings[animalId] = (totalSightings[animalId] || 0) + count;
-          });
-        }
+        if (!tp) return;
+        tripCount++;
+        totalPoints += tp.totalPoints;
+        Object.entries(tp.sightings).forEach(([animalId, count]) => {
+          totalSightings[animalId] = (totalSightings[animalId] || 0) + count;
+        });
         if (trip.winnerId === player.id) {
           wins++;
         }
@@ -498,14 +526,35 @@ export function usePlayerStats() {
         }
       });
 
-      playerActiveTrips.forEach((trip) => {
+      map.set(player.id, { totalPoints, totalSightings, totalDays, wins, tripCount });
+    });
+
+    return map;
+  }, [players, completedTrips]);
+
+  const stats = useMemo(() => {
+    const activeTripCount = activeTrips.length;
+
+    const playerStats = players.map((player) => {
+      const completed = completedStatsMap.get(player.id) ?? {
+        totalPoints: 0,
+        totalSightings: {},
+        totalDays: 0,
+        wins: 0,
+        tripCount: 0,
+      };
+
+      let activePoints = 0;
+      let activeSightings: { [animalId: string]: number } = {};
+      let activeDays = 0;
+
+      activeTrips.forEach((trip) => {
         const tp = trip.players.find((p) => p.playerId === player.id);
-        if (tp) {
-          totalPoints += tp.totalPoints;
-          Object.entries(tp.sightings).forEach(([animalId, count]) => {
-            totalSightings[animalId] = (totalSightings[animalId] || 0) + count;
-          });
-        }
+        if (!tp) return;
+        activePoints += tp.totalPoints;
+        Object.entries(tp.sightings).forEach(([animalId, count]) => {
+          activeSightings[animalId] = (activeSightings[animalId] || 0) + count;
+        });
         if (trip.startDate) {
           const start = new Date(trip.startDate);
           const now = new Date();
@@ -513,10 +562,16 @@ export function usePlayerStats() {
           const nowDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
           const diffMs = nowDay.getTime() - startDay.getTime();
           const calendarDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
-          totalDays += Math.max(1, calendarDays === 0 ? 1 : calendarDays + 1);
+          activeDays += Math.max(1, calendarDays === 0 ? 1 : calendarDays + 1);
         }
       });
 
+      const totalPoints = completed.totalPoints + activePoints;
+      const totalSightings = { ...completed.totalSightings };
+      Object.entries(activeSightings).forEach(([animalId, count]) => {
+        totalSightings[animalId] = (totalSightings[animalId] || 0) + count;
+      });
+      const totalDays = completed.totalDays + activeDays;
       const avgPerDay = totalDays > 0 ? Math.round(totalPoints / totalDays) : 0;
 
       return {
@@ -524,11 +579,13 @@ export function usePlayerStats() {
         totalPoints,
         totalSightings,
         avgPerDay,
-        wins,
-        tripCount: playerCompletedTrips.length,
+        wins: completed.wins,
+        tripCount: completed.tripCount,
       };
     });
 
-    return { stats, activeTripCount };
-  }, [players, trips, completedTrips, activeTrips]);
+    return { stats: playerStats, activeTripCount };
+  }, [players, activeTrips, completedStatsMap]);
+
+  return stats;
 }
