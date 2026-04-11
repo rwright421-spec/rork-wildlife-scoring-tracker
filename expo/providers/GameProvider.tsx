@@ -137,10 +137,34 @@ export const [GameProvider, useGame] = createContextHook(() => {
 
   const removeAnimal = useCallback(
     (animalId: string) => {
-      updateState((prev) => ({
-        ...prev,
-        animals: prev.animals.filter((a) => a.id !== animalId),
-      }));
+      updateState((prev) => {
+        const updatedTrips = prev.trips.map((trip) => {
+          const hasAnimal = trip.animals.some((a) => a.id === animalId);
+          if (!hasAnimal) return trip;
+          return {
+            ...trip,
+            animals: trip.animals.filter((a) => a.id !== animalId),
+            players: trip.players.map((tp) => {
+              const removedCount = tp.sightings[animalId] || 0;
+              if (removedCount === 0) return tp;
+              const removedAnimal = trip.animals.find((a) => a.id === animalId);
+              const pointsToSubtract = removedCount * (removedAnimal?.points || 0);
+              const newSightings = { ...tp.sightings };
+              delete newSightings[animalId];
+              return {
+                ...tp,
+                sightings: newSightings,
+                totalPoints: Math.max(0, tp.totalPoints - pointsToSubtract),
+              };
+            }),
+          };
+        });
+        return {
+          ...prev,
+          animals: prev.animals.filter((a) => a.id !== animalId),
+          trips: updatedTrips,
+        };
+      });
     },
     [updateState]
   );
@@ -466,8 +490,11 @@ export function usePlayerStats() {
         if (trip.startDate && trip.endDate) {
           const start = new Date(trip.startDate);
           const end = new Date(trip.endDate);
-          const days = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
-          totalDays += days;
+          const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+          const endDay = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+          const diffMs = endDay.getTime() - startDay.getTime();
+          const calendarDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+          totalDays += Math.max(1, calendarDays === 0 ? 1 : calendarDays + 1);
         }
       });
 
@@ -482,8 +509,11 @@ export function usePlayerStats() {
         if (trip.startDate) {
           const start = new Date(trip.startDate);
           const now = new Date();
-          const days = Math.max(1, Math.ceil((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
-          totalDays += days;
+          const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+          const nowDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          const diffMs = nowDay.getTime() - startDay.getTime();
+          const calendarDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+          totalDays += Math.max(1, calendarDays === 0 ? 1 : calendarDays + 1);
         }
       });
 
