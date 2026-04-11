@@ -64,7 +64,7 @@ export default function EndTripScreen() {
           return (
             <Pressable key={tp.playerId} style={[styles.playerCard, isSelected && styles.playerCardSelected]} onPress={() => setSelectedWinnerId(tp.playerId)}>
               <Text style={styles.medal}>{medal}</Text>
-              <PlayerAvatar avatar={player?.avatar ?? "🧑"} hairMeta={player?.hairMeta} size={40} fontSize={24} />
+              <PlayerAvatar avatar={player?.avatar ?? "🧑"} size={40} fontSize={24} />
               <View style={styles.playerDetails}>
                 <Text style={[styles.playerName, isSelected && styles.playerNameSelected]}>{player?.name ?? "Unknown"}</Text>
                 <Text style={styles.playerPoints}>{tp.totalPoints} points</Text>

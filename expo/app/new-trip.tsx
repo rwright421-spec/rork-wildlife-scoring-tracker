@@ -7,7 +7,7 @@ import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, Vi
 import Colors from "@/constants/colors";
 import { ANIMAL_EMOJI_OPTIONS, AVATAR_OPTIONS } from "@/constants/animals";
 import { useGame } from "@/providers/GameProvider";
-import { Animal, Player, PlayerHairMeta } from "@/types";
+import { Animal, Player } from "@/types";
 import { KeyboardAccessory, KEYBOARD_ACCESSORY_ID } from "@/components/KeyboardDoneBar";
 import AvatarPicker from "@/components/AvatarPicker";
 import PlayerAvatar from "@/components/PlayerAvatar";
@@ -52,7 +52,6 @@ export default function NewTripScreen() {
   const [showAddPlayer, setShowAddPlayer] = useState<boolean>(false);
   const [newPlayerName, setNewPlayerName] = useState<string>("");
   const [newPlayerAvatar, setNewPlayerAvatar] = useState<string>(AVATAR_OPTIONS[0]);
-  const [newPlayerHairMeta, setNewPlayerHairMeta] = useState<PlayerHairMeta | undefined>(undefined);
 
   const [editingAnimalId, setEditingAnimalId] = useState<string | null>(null);
   const [editName, setEditName] = useState<string>("");
@@ -97,15 +96,14 @@ export default function NewTripScreen() {
       Alert.alert("Name Required", "Please enter a name for the player.");
       return;
     }
-    const player = addPlayer(name, newPlayerAvatar, newPlayerHairMeta);
+    const player = addPlayer(name, newPlayerAvatar);
     setSelectedPlayerIds((prev) => [...prev, player.id]);
     setNewPlayerName("");
     setNewPlayerAvatar(AVATAR_OPTIONS[0]);
-    setNewPlayerHairMeta(undefined);
     setShowAddPlayer(false);
     setPlayerNameWarning("");
     if (__DEV__) console.log('[NewTrip] Added new player inline:', player.id, name);
-  }, [newPlayerName, newPlayerAvatar, newPlayerHairMeta, addPlayer]);
+  }, [newPlayerName, newPlayerAvatar, addPlayer]);
 
   const canProceedStep1 = tripName.trim().length > 0;
   const canProceedStep2 = selectedPlayerIds.length >= 2;
@@ -234,7 +232,7 @@ export default function NewTripScreen() {
               const selected = selectedPlayerIds.includes(player.id);
               return (
                 <Pressable key={player.id} style={[styles.playerChip, selected && styles.playerChipSelected]} onPress={() => togglePlayer(player.id)}>
-                  <PlayerAvatar avatar={player.avatar} hairMeta={player.hairMeta} size={28} fontSize={18} />
+                  <PlayerAvatar avatar={player.avatar} size={28} fontSize={18} />
                   <Text style={[styles.playerChipName, selected && styles.playerChipNameSelected]}>{player.name}</Text>
                   {selected && <View style={styles.checkIcon}><Check size={14} color={Colors.white} /></View>}
                 </Pressable>
@@ -260,7 +258,7 @@ export default function NewTripScreen() {
               <AvatarPicker
                 options={AVATAR_OPTIONS}
                 selected={newPlayerAvatar}
-                onSelect={(emoji, meta) => { setNewPlayerAvatar(emoji); setNewPlayerHairMeta(meta); }}
+                onSelect={(emoji) => { setNewPlayerAvatar(emoji); }}
                 size="small"
               />
               <View style={styles.addPlayerActions}>

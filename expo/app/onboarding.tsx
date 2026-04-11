@@ -18,7 +18,6 @@ import {
 import Colors from "@/constants/colors";
 import { AVATAR_OPTIONS } from "@/constants/animals";
 import { useGame } from "@/providers/GameProvider";
-import { PlayerHairMeta } from "@/types";
 import { KeyboardAccessory, KEYBOARD_ACCESSORY_ID } from "@/components/KeyboardDoneBar";
 import AvatarPicker from "@/components/AvatarPicker";
 import PlayerAvatar from "@/components/PlayerAvatar";
@@ -33,7 +32,7 @@ export default function OnboardingScreen() {
 
   const [newPlayerName, setNewPlayerName] = useState<string>("");
   const [selectedAvatar, setSelectedAvatar] = useState<string>(AVATAR_OPTIONS[0]);
-  const [selectedHairMeta, setSelectedHairMeta] = useState<PlayerHairMeta | undefined>(undefined);
+
   const [showAddForm, setShowAddForm] = useState<boolean>(false);
 
   const animateTransition = useCallback((toStep: number) => {
@@ -69,12 +68,11 @@ export default function OnboardingScreen() {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    addPlayer(name, selectedAvatar, selectedHairMeta);
+    addPlayer(name, selectedAvatar);
     setNewPlayerName("");
     setSelectedAvatar(AVATAR_OPTIONS[0]);
-    setSelectedHairMeta(undefined);
     setShowAddForm(false);
-  }, [newPlayerName, selectedAvatar, selectedHairMeta, addPlayer]);
+  }, [newPlayerName, selectedAvatar, addPlayer]);
 
   const handleRemovePlayer = useCallback(
     (playerId: string, playerName: string) => {
@@ -170,7 +168,7 @@ export default function OnboardingScreen() {
       >
         {players.map((player) => (
           <View key={player.id} style={styles.playerCard}>
-            <PlayerAvatar avatar={player.avatar} hairMeta={player.hairMeta} size={36} fontSize={22} />
+            <PlayerAvatar avatar={player.avatar} size={36} fontSize={22} />
             <Text style={styles.playerName}>{player.name}</Text>
             <Pressable
               style={styles.playerDeleteBtn}
@@ -199,7 +197,7 @@ export default function OnboardingScreen() {
             <AvatarPicker
               options={AVATAR_OPTIONS}
               selected={selectedAvatar}
-              onSelect={(emoji, meta) => { setSelectedAvatar(emoji); setSelectedHairMeta(meta); }}
+              onSelect={(emoji) => { setSelectedAvatar(emoji); }}
               size="small"
             />
             <View style={styles.formActions}>
@@ -263,7 +261,7 @@ export default function OnboardingScreen() {
         <View style={styles.readyPlayerRow}>
           {players.map((p) => (
             <View key={p.id} style={styles.readyPlayerChip}>
-              <PlayerAvatar avatar={p.avatar} hairMeta={p.hairMeta} size={28} fontSize={18} />
+              <PlayerAvatar avatar={p.avatar} size={28} fontSize={18} />
               <Text style={styles.readyPlayerName}>{p.name}</Text>
             </View>
           ))}

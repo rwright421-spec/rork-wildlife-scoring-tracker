@@ -44,7 +44,7 @@ export default function TripDetailScreen() {
         <Text style={styles.tripName}>{trip.name}</Text>
         <View style={styles.metaRow}><Calendar size={14} color={Colors.brownMuted} /><Text style={styles.metaText}>{new Date(trip.startDate).toLocaleDateString()}</Text></View>
         <View style={styles.metaRow}><Clock size={14} color={Colors.brownMuted} /><Text style={styles.metaText}>{duration}</Text></View>
-        {winner && (<View style={styles.winnerBanner}><Trophy size={20} color={Colors.gold} /><View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}><Text style={styles.winnerBannerText}>Winner: </Text><PlayerAvatar avatar={winner.avatar} hairMeta={winner.hairMeta} size={22} fontSize={16} /><Text style={styles.winnerBannerText}> {winner.name}</Text></View></View>)}
+        {winner && (<View style={styles.winnerBanner}><Trophy size={20} color={Colors.gold} /><View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}><Text style={styles.winnerBannerText}>Winner: </Text><PlayerAvatar avatar={winner.avatar} size={22} fontSize={16} /><Text style={styles.winnerBannerText}> {winner.name}</Text></View></View>)}
       </View>
       <Text style={styles.sectionTitle}>Scoreboard</Text>
       {sortedPlayers.map((tp, index) => {
@@ -56,7 +56,7 @@ export default function TripDetailScreen() {
           <View key={tp.playerId} style={[styles.playerCard, isWinner && styles.winnerCard]}>
             <View style={styles.playerHeader}>
               <Text style={styles.playerMedal}>{medal}</Text>
-              <PlayerAvatar avatar={player?.avatar ?? "🧑"} hairMeta={player?.hairMeta} size={36} fontSize={22} />
+              <PlayerAvatar avatar={player?.avatar ?? "🧑"} size={36} fontSize={22} />
               <Text style={styles.playerName}>{player?.name ?? "Unknown"}</Text>
               <View style={styles.totalBadge}><Text style={styles.totalPoints}>{tp.totalPoints}</Text><Text style={styles.totalLabel}>pts</Text></View>
             </View>

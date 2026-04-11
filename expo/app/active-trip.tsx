@@ -6,7 +6,7 @@ import { Alert, Animated, FlatList, Modal, Platform, Pressable, ScrollView, Styl
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ANIMAL_EMOJI_OPTIONS, AVATAR_OPTIONS } from "@/constants/animals";
-import { Animal, Player, PlayerHairMeta } from "@/types";
+import { Animal, Player } from "@/types";
 
 import Colors from "@/constants/colors";
 import { useGame } from "@/providers/GameProvider";
@@ -57,7 +57,7 @@ export default function ActiveTripScreen() {
   const [playerNameWarning, setPlayerNameWarning] = useState<string>("");
   const [animalNameWarning, setAnimalNameWarning] = useState<string>("");
   const [newPlayerAvatar, setNewPlayerAvatar] = useState("🧑");
-  const [newPlayerHairMeta, setNewPlayerHairMeta] = useState<PlayerHairMeta | undefined>(undefined);
+
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const snackbarOpacity = useRef(new Animated.Value(0)).current;
   const snackbarTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -228,11 +228,11 @@ export default function ActiveTripScreen() {
     if (!name) { Alert.alert("Missing name", "Please enter a player name."); return; }
     setPlayerNameWarning("");
     if (Platform.OS !== "web") { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); }
-    const newPlayer = addPlayer(name, newPlayerAvatar, newPlayerHairMeta);
+    const newPlayer = addPlayer(name, newPlayerAvatar);
     addPlayerToTrip(currentTrip.id, newPlayer.id);
     if (__DEV__) console.log('[ActiveTrip] Created new player and added to trip:', name);
     setAddPlayerModalVisible(false);
-  }, [currentTrip, newPlayerName, newPlayerAvatar, newPlayerHairMeta, addPlayer, addPlayerToTrip]);
+  }, [currentTrip, newPlayerName, newPlayerAvatar, addPlayer, addPlayerToTrip]);
 
   const openEditModal = useCallback(() => {
     setEditingAnimal(null);
@@ -377,7 +377,7 @@ export default function ActiveTripScreen() {
               <View style={styles.playerHeader}>
                 <Pressable style={styles.playerInfo} onPress={() => { if (player) { setEditingPlayerId(player.id); setEditPlayerModalVisible(true); } }}>
                   {isLeader && <Text style={styles.crownEmoji}>👑</Text>}
-                  <PlayerAvatar avatar={player?.avatar ?? "🧑"} hairMeta={player?.hairMeta} size={36} fontSize={22} />
+                  <PlayerAvatar avatar={player?.avatar ?? "🧑"} size={36} fontSize={22} />
                   <Text style={styles.playerName}>{player?.name ?? "Unknown"}</Text>
                 </Pressable>
                 <View style={styles.pointsBadge}>
@@ -555,7 +555,7 @@ export default function ActiveTripScreen() {
                   <AvatarPicker
                     options={AVATAR_OPTIONS}
                     selected={newPlayerAvatar}
-                    onSelect={(avatar, meta) => { setNewPlayerAvatar(avatar); setNewPlayerHairMeta(meta); setShowAvatarPicker(false); }}
+                    onSelect={(avatar) => { setNewPlayerAvatar(avatar); setShowAvatarPicker(false); }}
                     label="Pick an avatar:"
                     size="small"
                   />
@@ -580,7 +580,7 @@ export default function ActiveTripScreen() {
                 {availablePlayers.length > 0 ? (
                   availablePlayers.map((player) => (
                     <Pressable key={player.id} style={styles.playerListItem} onPress={() => handleSelectExistingPlayer(player)}>
-                      <PlayerAvatar avatar={player.avatar} hairMeta={player.hairMeta} size={32} fontSize={20} />
+                      <PlayerAvatar avatar={player.avatar} size={32} fontSize={20} />
                       <Text style={styles.playerListName}>{player.name}</Text>
                       <Plus size={18} color={Colors.primary} />
                     </Pressable>

@@ -36,7 +36,7 @@ export default function StatsScreen() {
       {playerStats.map((stat) => (
         <View key={stat.player.id} style={styles.playerCard}>
           <View style={styles.playerHeader}>
-            <PlayerAvatar avatar={stat.player.avatar} hairMeta={stat.player.hairMeta} size={44} fontSize={26} />
+            <PlayerAvatar avatar={stat.player.avatar} size={44} fontSize={26} />
             <View style={styles.playerNameSection}>
               <Text style={styles.playerName}>{stat.player.name}</Text>
               <Text style={styles.tripCount}>
@@ -114,7 +114,7 @@ export default function StatsScreen() {
               return (
                 <View key={stat.player.id} style={styles.leaderRow}>
                   <Text style={styles.leaderMedal}>{medal}</Text>
-                  <PlayerAvatar avatar={stat.player.avatar} hairMeta={stat.player.hairMeta} size={28} fontSize={18} />
+                  <PlayerAvatar avatar={stat.player.avatar} size={28} fontSize={18} />
                   <Text style={styles.leaderName}>{stat.player.name}</Text>
                   <Text style={styles.leaderWins}>
                     {stat.wins} win{stat.wins !== 1 ? "s" : ""}

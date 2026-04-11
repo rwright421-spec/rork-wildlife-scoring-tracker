@@ -2,14 +2,11 @@ import React, { useCallback, useMemo, useState } from "react";
 import {
   Modal,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
-import { ChevronLeft } from "lucide-react-native";
 import Colors from "@/constants/colors";
-import { PlayerHairMeta } from "@/types";
 
 const SKIN_TONE_MODIFIERS: { label: string; modifier: string }[] = [
   { label: "Default", modifier: "" },
@@ -29,76 +26,6 @@ const SKIN_TONE_COLORS: string[] = [
   "#594539",
 ];
 
-type EmojiGender = "female" | "male" | "neutral";
-
-const FEMALE_EMOJIS = new Set(["👩", "👧", "👵", "👸", "👰", "🤶"]);
-const MALE_EMOJIS = new Set(["👨", "👦", "👴", "🤴", "🎅", "🧔"]);
-
-function getEmojiGender(base: string): EmojiGender {
-  if (FEMALE_EMOJIS.has(base)) return "female";
-  if (MALE_EMOJIS.has(base)) return "male";
-  return "neutral";
-}
-
-interface HairStyleOption {
-  id: string;
-  label: string;
-  zwj: string;
-  icon: string;
-}
-
-const FEMALE_HAIR_STYLES: HairStyleOption[] = [
-  { id: "default", label: "Straight", zwj: "", icon: "💇‍♀️" },
-  { id: "curly", label: "Curly", zwj: "\u200D\u{1F9B1}", icon: "🦱" },
-  { id: "bald", label: "Bald", zwj: "\u200D\u{1F9B2}", icon: "🦲" },
-];
-
-const MALE_HAIR_STYLES: HairStyleOption[] = [
-  { id: "default", label: "Straight", zwj: "", icon: "💇‍♂️" },
-  { id: "curly", label: "Curly", zwj: "\u200D\u{1F9B1}", icon: "🦱" },
-  { id: "bald", label: "Bald", zwj: "\u200D\u{1F9B2}", icon: "🦲" },
-];
-
-const NEUTRAL_HAIR_STYLES: HairStyleOption[] = [
-  { id: "default", label: "Straight", zwj: "", icon: "💇" },
-  { id: "curly", label: "Curly", zwj: "\u200D\u{1F9B1}", icon: "🦱" },
-  { id: "bald", label: "Bald", zwj: "\u200D\u{1F9B2}", icon: "🦲" },
-];
-
-function getHairStyles(gender: EmojiGender): HairStyleOption[] {
-  switch (gender) {
-    case "female": return FEMALE_HAIR_STYLES;
-    case "male": return MALE_HAIR_STYLES;
-    default: return NEUTRAL_HAIR_STYLES;
-  }
-}
-
-interface HairColorOption {
-  id: string;
-  label: string;
-  hex: string;
-  zwj: string;
-  isFashion: boolean;
-}
-
-const HAIR_COLORS: HairColorOption[] = [
-  { id: "default", label: "None", hex: "", zwj: "", isFashion: false },
-  { id: "black", label: "Black", hex: "#1C1C1C", zwj: "", isFashion: false },
-  { id: "dark_brown", label: "Dk Brown", hex: "#3B2314", zwj: "", isFashion: false },
-  { id: "medium_brown", label: "Med Brown", hex: "#6B3A2A", zwj: "", isFashion: false },
-  { id: "light_brown", label: "Lt Brown", hex: "#A0642D", zwj: "", isFashion: false },
-  { id: "blonde", label: "Blonde", hex: "#D4A839", zwj: "", isFashion: false },
-  { id: "strawberry", label: "Strawberry", hex: "#C67A3C", zwj: "", isFashion: false },
-  { id: "red", label: "Red", hex: "#B33030", zwj: "\u200D\u{1F9B0}", isFashion: false },
-  { id: "auburn", label: "Auburn", hex: "#7B3B2E", zwj: "", isFashion: false },
-  { id: "gray", label: "Gray", hex: "#9E9E9E", zwj: "\u200D\u{1F9B3}", isFashion: false },
-  { id: "white", label: "White", hex: "#E8E8E8", zwj: "\u200D\u{1F9B3}", isFashion: false },
-  { id: "blue", label: "Blue", hex: "#2979FF", zwj: "", isFashion: true },
-  { id: "purple", label: "Purple", hex: "#9C27B0", zwj: "", isFashion: true },
-  { id: "pink", label: "Pink", hex: "#E91E8F", zwj: "", isFashion: true },
-  { id: "green", label: "Green", hex: "#2E7D32", zwj: "", isFashion: true },
-];
-
 const PERSON_EMOJIS_WITH_SKIN_TONE = new Set([
   "🧑", "👩", "👨", "👧", "👦", "🧒", "👵", "👴",
   "👶", "👱", "🧔", "👳", "👲", "🧕", "👮",
@@ -111,8 +38,6 @@ const PERSON_EMOJIS_WITH_SKIN_TONE = new Set([
   "🚵", "🤼", "🤹", "🧗", "🤱", "👼", "🤰",
 ]);
 
-const HAIR_SUPPORTED_EMOJIS = new Set(["🧑", "👩", "👨", "👧", "👦", "🧒", "👵", "👴"]);
-
 function getBaseEmoji(emoji: string): string {
   const codePoints = [...emoji];
   return codePoints[0] || emoji;
@@ -123,32 +48,10 @@ function supportsModifiers(emoji: string): boolean {
   return PERSON_EMOJIS_WITH_SKIN_TONE.has(base);
 }
 
-function supportsHair(emoji: string): boolean {
-  const base = getBaseEmoji(emoji);
-  return HAIR_SUPPORTED_EMOJIS.has(base);
-}
-
-function buildEmoji(base: string, skinTone: string, styleZwj: string, colorZwj: string): string {
-  const hairZwj = colorZwj || styleZwj;
-  return `${base}${skinTone}${hairZwj}`;
-}
-
-type CustomizerStep = "skin" | "hair";
-
-function getHairStylePreviewEmoji(base: string, skinMod: string, style: HairStyleOption): string {
-  if (!style.zwj) return `${base}${skinMod}`;
-  return `${base}${skinMod}${style.zwj}`;
-}
-
-function getHairColorPreviewEmoji(base: string, skinMod: string, styleZwj: string, color: HairColorOption): string {
-  const zwj = color.zwj || styleZwj;
-  return `${base}${skinMod}${zwj}`;
-}
-
 interface AvatarPickerProps {
   options: string[];
   selected: string;
-  onSelect: (emoji: string, hairMeta?: PlayerHairMeta) => void;
+  onSelect: (emoji: string) => void;
   label?: string;
   size?: "small" | "normal";
 }
@@ -163,28 +66,14 @@ export default function AvatarPicker({
   const [customizerVisible, setCustomizerVisible] = useState<boolean>(false);
   const [customizerBase, setCustomizerBase] = useState<string>("");
   const [selectedSkinTone, setSelectedSkinTone] = useState<number>(0);
-  const [selectedHairStyleIdx, setSelectedHairStyleIdx] = useState<number>(0);
-  const [selectedHairColorIdx, setSelectedHairColorIdx] = useState<number>(0);
-  const [currentStep, setCurrentStep] = useState<CustomizerStep>("skin");
 
   const isSmall = size === "small";
-
-  const emojiGender = useMemo(() => getEmojiGender(customizerBase), [customizerBase]);
-  const hairStyles = useMemo(() => getHairStyles(emojiGender), [emojiGender]);
-  const canHaveHair = useMemo(() => supportsHair(customizerBase), [customizerBase]);
-
-  const selectedHairStyle = hairStyles[selectedHairStyleIdx] ?? hairStyles[0];
-  const selectedHairColor = HAIR_COLORS[selectedHairColorIdx] ?? HAIR_COLORS[0];
 
   const previewEmoji = useMemo(() => {
     if (!customizerBase) return "";
     const skinMod = SKIN_TONE_MODIFIERS[selectedSkinTone]?.modifier ?? "";
-    const styleZwj = selectedHairStyle?.zwj || "";
-    const colorZwj = selectedHairColor?.zwj || "";
-    return buildEmoji(customizerBase, skinMod, styleZwj, colorZwj);
-  }, [customizerBase, selectedSkinTone, selectedHairStyle, selectedHairColor]);
-
-  const skinMod = SKIN_TONE_MODIFIERS[selectedSkinTone]?.modifier ?? "";
+    return `${customizerBase}${skinMod}`;
+  }, [customizerBase, selectedSkinTone]);
 
   const handleEmojiTap = useCallback(
     (emoji: string) => {
@@ -192,89 +81,22 @@ export default function AvatarPicker({
         const base = getBaseEmoji(emoji);
         setCustomizerBase(base);
         setSelectedSkinTone(0);
-        setSelectedHairStyleIdx(0);
-        setSelectedHairColorIdx(0);
-        setCurrentStep("skin");
         setCustomizerVisible(true);
-        if (__DEV__) console.log("[AvatarPicker] Opened customizer for:", base, "gender:", getEmojiGender(base));
       } else {
-        onSelect(emoji, undefined);
+        onSelect(emoji);
       }
     },
     [onSelect]
   );
 
-  const handleNext = useCallback(() => {
-    if (currentStep === "skin") {
-      if (canHaveHair) {
-        setCurrentStep("hair");
-      } else {
-        const skinMod = SKIN_TONE_MODIFIERS[selectedSkinTone]?.modifier ?? "";
-        const finalEmoji = buildEmoji(customizerBase, skinMod, "", "");
-        onSelect(finalEmoji, undefined);
-        setCustomizerVisible(false);
-        if (__DEV__) console.log("[AvatarPicker] Selected (no hair):", finalEmoji);
-      }
-    }
-  }, [currentStep, canHaveHair, selectedSkinTone, customizerBase, onSelect]);
-
-  const handleBack = useCallback(() => {
-    if (currentStep === "hair") {
-      setCurrentStep("skin");
-    }
-  }, [currentStep]);
-
   const handleDone = useCallback(() => {
-    const hairColor = HAIR_COLORS[selectedHairColorIdx];
-    const hairStyle = hairStyles[selectedHairStyleIdx];
-
-    const hasStyle = hairStyle && hairStyle.id !== "default";
-    const hasColor = hairColor && hairColor.id !== "default" && hairColor.hex;
-
-    const meta: PlayerHairMeta | undefined =
-      (hasStyle || hasColor)
-        ? {
-            style: hasStyle ? hairStyle.id : undefined,
-            color: hasColor ? hairColor.id : undefined,
-            colorHex: hasColor ? hairColor.hex : undefined,
-          }
-        : undefined;
-
-    onSelect(previewEmoji, meta);
+    onSelect(previewEmoji);
     setCustomizerVisible(false);
-    if (__DEV__) console.log("[AvatarPicker] Final selection:", previewEmoji, "meta:", meta);
-  }, [previewEmoji, onSelect, selectedHairColorIdx, selectedHairStyleIdx, hairStyles]);
+  }, [previewEmoji, onSelect]);
 
   const handleCancel = useCallback(() => {
     setCustomizerVisible(false);
   }, []);
-
-  const stepTitle = useMemo(() => {
-    switch (currentStep) {
-      case "skin": return "Skin Tone";
-      case "hair": return "Hair";
-    }
-  }, [currentStep]);
-
-  const stepIndicator = useMemo(() => {
-    const totalSteps = canHaveHair ? 2 : 1;
-    const stepNum = currentStep === "skin" ? 1 : 2;
-    return { stepNum, totalSteps };
-  }, [currentStep, canHaveHair]);
-
-  const selectionSummary = useMemo(() => {
-    const parts: string[] = [];
-    if (selectedHairStyle && selectedHairStyle.id !== "default") {
-      parts.push(selectedHairStyle.label);
-    }
-    if (selectedHairColor && selectedHairColor.id !== "default") {
-      parts.push(selectedHairColor.label);
-    }
-    return parts.join(" · ");
-  }, [selectedHairStyle, selectedHairColor]);
-
-  const naturalColors = HAIR_COLORS.filter((c) => !c.isFashion);
-  const fashionColors = HAIR_COLORS.filter((c) => c.isFashion);
 
   return (
     <>
@@ -310,216 +132,43 @@ export default function AvatarPicker({
             <View style={styles.previewSection}>
               <View style={styles.previewCircle}>
                 <Text style={styles.previewEmoji}>{previewEmoji}</Text>
-                {selectedHairColor && selectedHairColor.id !== "default" && selectedHairColor.hex ? (
-                  <View style={[styles.previewBadge, { backgroundColor: selectedHairColor.hex }]} />
-                ) : null}
               </View>
-              <Text style={styles.previewLabel}>Customize Avatar</Text>
-              {selectionSummary ? (
-                <Text style={styles.selectionSummary}>{selectionSummary}</Text>
-              ) : null}
-              <View style={styles.stepRow}>
-                {Array.from({ length: stepIndicator.totalSteps }).map((_, i) => (
-                  <View
-                    key={i}
+              <Text style={styles.previewLabel}>Choose Skin Tone</Text>
+            </View>
+
+            <View style={styles.section}>
+              <View style={styles.swatchRow}>
+                {SKIN_TONE_MODIFIERS.map((tone, index) => (
+                  <Pressable
+                    key={tone.label}
                     style={[
-                      styles.stepDot,
-                      i < stepIndicator.stepNum && styles.stepDotActive,
+                      styles.swatch,
+                      { backgroundColor: SKIN_TONE_COLORS[index] },
+                      selectedSkinTone === index && styles.swatchSelected,
                     ]}
-                  />
+                    onPress={() => setSelectedSkinTone(index)}
+                  >
+                    {selectedSkinTone === index && (
+                      <View style={styles.swatchCheck} />
+                    )}
+                  </Pressable>
                 ))}
               </View>
             </View>
 
-            {currentStep !== "skin" && (
-              <Pressable style={styles.backBtn} onPress={handleBack} hitSlop={8}>
-                <ChevronLeft size={16} color={Colors.brownMuted} />
-                <Text style={styles.backBtnText}>Back</Text>
-              </Pressable>
-            )}
-
-            <Text style={styles.sectionLabel}>{stepTitle}</Text>
-
-            {currentStep === "skin" && (
-              <View style={styles.section}>
-                <View style={styles.swatchRow}>
-                  {SKIN_TONE_MODIFIERS.map((tone, index) => (
-                    <Pressable
-                      key={tone.label}
-                      style={[
-                        styles.swatch,
-                        { backgroundColor: SKIN_TONE_COLORS[index] },
-                        selectedSkinTone === index && styles.swatchSelected,
-                      ]}
-                      onPress={() => setSelectedSkinTone(index)}
-                    >
-                      {selectedSkinTone === index && (
-                        <View style={styles.swatchCheck} />
-                      )}
-                    </Pressable>
-                  ))}
-                </View>
-              </View>
-            )}
-
-            {currentStep === "hair" && (
-              <View style={styles.section}>
-                <Text style={styles.colorGroupLabel}>Style</Text>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.hairScrollContent}
-                >
-                  {hairStyles.map((style, index) => {
-                    const stylePreview = getHairStylePreviewEmoji(customizerBase, skinMod, style);
-                    return (
-                      <Pressable
-                        key={style.id}
-                        style={[
-                          styles.hairStyleCard,
-                          selectedHairStyleIdx === index && styles.hairStyleCardSelected,
-                        ]}
-                        onPress={() => {
-                          setSelectedHairStyleIdx(index);
-                          if (__DEV__) console.log("[AvatarPicker] Selected hair style:", style.label, "preview:", stylePreview);
-                        }}
-                      >
-                        <Text style={styles.hairStyleIcon}>{stylePreview}</Text>
-                        <Text
-                          style={[
-                            styles.hairStyleLabel,
-                            selectedHairStyleIdx === index && styles.hairStyleLabelSelected,
-                          ]}
-                          numberOfLines={1}
-                        >
-                          {style.label}
-                        </Text>
-                      </Pressable>
-                    );
-                  })}
-                </ScrollView>
-
-                <Text style={[styles.colorGroupLabel, { marginTop: 14 }]}>Color</Text>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.colorScrollContent}
-                >
-                  {naturalColors.map((color) => {
-                    const globalIdx = HAIR_COLORS.findIndex((c) => c.id === color.id);
-                    const isSelected = selectedHairColorIdx === globalIdx;
-                    const colorPreview = getHairColorPreviewEmoji(customizerBase, skinMod, selectedHairStyle?.zwj || "", color);
-                    return (
-                      <Pressable
-                        key={color.id}
-                        style={[
-                          styles.colorCard,
-                          isSelected && styles.colorCardSelected,
-                        ]}
-                        onPress={() => {
-                          setSelectedHairColorIdx(globalIdx);
-                          if (__DEV__) console.log("[AvatarPicker] Selected hair color:", color.label, "preview:", colorPreview);
-                        }}
-                      >
-                        {color.hex ? (
-                          <View style={[styles.colorDot, { backgroundColor: color.hex }]}>
-                            {isSelected && <View style={styles.colorDotCheck} />}
-                          </View>
-                        ) : (
-                          <View style={[styles.colorDot, styles.colorDotDefault]}>
-                            {isSelected && <View style={styles.colorDotCheck} />}
-                          </View>
-                        )}
-                        <Text
-                          style={[
-                            styles.colorLabel,
-                            isSelected && styles.colorLabelSelected,
-                          ]}
-                          numberOfLines={1}
-                        >
-                          {color.label}
-                        </Text>
-                      </Pressable>
-                    );
-                  })}
-                </ScrollView>
-
-                <Text style={[styles.colorGroupLabel, { marginTop: 14 }]}>Fashion</Text>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.colorScrollContent}
-                >
-                  {fashionColors.map((color) => {
-                    const globalIdx = HAIR_COLORS.findIndex((c) => c.id === color.id);
-                    const isSelected = selectedHairColorIdx === globalIdx;
-                    return (
-                      <Pressable
-                        key={color.id}
-                        style={[
-                          styles.colorCard,
-                          isSelected && styles.colorCardSelected,
-                        ]}
-                        onPress={() => {
-                          setSelectedHairColorIdx(globalIdx);
-                          if (__DEV__) console.log("[AvatarPicker] Selected fashion hair color:", color.label);
-                        }}
-                      >
-                        <View style={[styles.colorDot, { backgroundColor: color.hex }]}>
-                          {isSelected && <View style={styles.colorDotCheck} />}
-                        </View>
-                        <Text
-                          style={[
-                            styles.colorLabel,
-                            isSelected && styles.colorLabelSelected,
-                          ]}
-                          numberOfLines={1}
-                        >
-                          {color.label}
-                        </Text>
-                      </Pressable>
-                    );
-                  })}
-                </ScrollView>
-
-                {selectedHairColor && selectedHairColor.id !== "default" && !selectedHairColor.zwj && (
-                  <Text style={styles.colorHint}>Color shown as badge on avatar</Text>
-                )}
-              </View>
-            )}
-
             <View style={styles.actions}>
-              {currentStep === "hair" || (currentStep === "skin" && !canHaveHair) ? (
-                <>
-                  <Pressable
-                    style={({ pressed }) => [styles.cancelBtn, pressed && styles.cancelBtnPressed]}
-                    onPress={handleCancel}
-                  >
-                    <Text style={styles.cancelBtnText}>Cancel</Text>
-                  </Pressable>
-                  <Pressable
-                    style={({ pressed }) => [styles.doneBtn, pressed && styles.doneBtnPressed]}
-                    onPress={currentStep === "hair" ? handleDone : handleNext}
-                  >
-                    <Text style={styles.doneBtnText}>Done</Text>
-                  </Pressable>
-                </>
-              ) : (
-                <>
-                  <Pressable
-                    style={({ pressed }) => [styles.cancelBtn, pressed && styles.cancelBtnPressed]}
-                    onPress={handleCancel}
-                  >
-                    <Text style={styles.cancelBtnText}>Cancel</Text>
-                  </Pressable>
-                  <Pressable
-                    style={({ pressed }) => [styles.nextBtn, pressed && styles.nextBtnPressed]}
-                    onPress={handleNext}
-                  >
-                    <Text style={styles.nextBtnText}>Next</Text>
-                  </Pressable>
-                </>
-              )}
+              <Pressable
+                style={({ pressed }) => [styles.cancelBtn, pressed && styles.cancelBtnPressed]}
+                onPress={handleCancel}
+              >
+                <Text style={styles.cancelBtnText}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.doneBtn, pressed && styles.doneBtnPressed]}
+                onPress={handleDone}
+              >
+                <Text style={styles.doneBtnText}>Done</Text>
+              </Pressable>
             </View>
           </Pressable>
         </Pressable>
@@ -599,7 +248,7 @@ const styles = StyleSheet.create({
   },
   previewSection: {
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 20,
   },
   previewCircle: {
     width: 80,
@@ -615,64 +264,13 @@ const styles = StyleSheet.create({
   previewEmoji: {
     fontSize: 44,
   },
-  previewBadge: {
-    position: "absolute",
-    bottom: 0,
-    right: 0,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 2.5,
-    borderColor: Colors.white,
-  },
-  selectionSummary: {
-    fontSize: 13,
-    fontWeight: "600" as const,
-    color: Colors.primary,
-    marginBottom: 4,
-    marginTop: -2,
-  },
   previewLabel: {
     fontSize: 17,
     fontWeight: "700" as const,
     color: Colors.brown,
-    marginBottom: 6,
-  },
-  stepRow: {
-    flexDirection: "row",
-    gap: 6,
-  },
-  stepDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.border,
-  },
-  stepDotActive: {
-    backgroundColor: Colors.primary,
-  },
-  backBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 2,
-    marginBottom: 8,
-    alignSelf: "flex-start",
-  },
-  backBtnText: {
-    fontSize: 13,
-    fontWeight: "600" as const,
-    color: Colors.brownMuted,
   },
   section: {
-    marginBottom: 18,
-  },
-  sectionLabel: {
-    fontSize: 13,
-    fontWeight: "600" as const,
-    color: Colors.brownMuted,
-    marginBottom: 10,
-    textTransform: "uppercase" as const,
-    letterSpacing: 0.5,
+    marginBottom: 20,
   },
   swatchRow: {
     flexDirection: "row",
@@ -699,101 +297,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderWidth: 2,
     borderColor: Colors.primary,
-  },
-  hairScrollContent: {
-    gap: 8,
-    paddingHorizontal: 2,
-    paddingVertical: 4,
-  },
-  hairStyleCard: {
-    width: 72,
-    alignItems: "center",
-    paddingVertical: 10,
-    paddingHorizontal: 4,
-    borderRadius: 14,
-    backgroundColor: Colors.cream,
-    borderWidth: 2,
-    borderColor: "transparent",
-  },
-  hairStyleCardSelected: {
-    borderColor: Colors.primary,
-    backgroundColor: "#EDF5F0",
-  },
-  hairStyleIcon: {
-    fontSize: 24,
-    marginBottom: 4,
-  },
-  hairStyleLabel: {
-    fontSize: 11,
-    fontWeight: "500" as const,
-    color: Colors.brownMuted,
-    textAlign: "center" as const,
-  },
-  hairStyleLabelSelected: {
-    color: Colors.primary,
-    fontWeight: "700" as const,
-  },
-  colorGroupLabel: {
-    fontSize: 12,
-    fontWeight: "600" as const,
-    color: Colors.textSecondary,
-    marginBottom: 8,
-  },
-  colorScrollContent: {
-    gap: 8,
-    paddingHorizontal: 2,
-    paddingVertical: 2,
-  },
-  colorCard: {
-    width: 56,
-    alignItems: "center",
-    paddingVertical: 6,
-    borderRadius: 12,
-    backgroundColor: Colors.cream,
-    borderWidth: 2,
-    borderColor: "transparent",
-  },
-  colorCardSelected: {
-    borderColor: Colors.primary,
-    backgroundColor: "#EDF5F0",
-  },
-  colorDot: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    marginBottom: 4,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.08)",
-  },
-  colorDotDefault: {
-    backgroundColor: Colors.border,
-  },
-  colorDotCheck: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: Colors.white,
-    borderWidth: 2,
-    borderColor: Colors.primary,
-  },
-  colorLabel: {
-    fontSize: 9,
-    fontWeight: "500" as const,
-    color: Colors.brownMuted,
-    textAlign: "center" as const,
-  },
-  colorLabelSelected: {
-    color: Colors.primary,
-    fontWeight: "700" as const,
-  },
-  colorHint: {
-    fontSize: 11,
-    color: Colors.brownMuted,
-    fontStyle: "italic" as const,
-    textAlign: "center" as const,
-    marginTop: 8,
   },
   actions: {
     flexDirection: "row",
@@ -829,22 +332,6 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.97 }],
   },
   doneBtnText: {
-    fontSize: 15,
-    fontWeight: "700" as const,
-    color: Colors.white,
-  },
-  nextBtn: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 14,
-    alignItems: "center",
-    backgroundColor: Colors.accent,
-  },
-  nextBtnPressed: {
-    backgroundColor: Colors.accentDark,
-    transform: [{ scale: 0.97 }],
-  },
-  nextBtnText: {
     fontSize: 15,
     fontWeight: "700" as const,
     color: Colors.white,

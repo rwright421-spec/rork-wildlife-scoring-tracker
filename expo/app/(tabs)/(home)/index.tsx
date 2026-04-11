@@ -129,7 +129,7 @@ export default function HomeScreen() {
                   {leader ? (
                     <View style={styles.leaderRow}>
                       <Text style={styles.leaderEmoji}>👑</Text>
-                      <PlayerAvatar avatar={leader.avatar} hairMeta={leader.hairMeta} size={24} fontSize={16} />
+                      <PlayerAvatar avatar={leader.avatar} size={24} fontSize={16} />
                       <Text style={styles.leaderName} numberOfLines={1}>
                         {leader.name}
                       </Text>
@@ -253,7 +253,7 @@ export default function HomeScreen() {
                 {winner && (
                   <View style={styles.winnerRow}>
                     <Trophy size={14} color={Colors.gold} />
-                    <PlayerAvatar avatar={winner.avatar} hairMeta={winner.hairMeta} size={18} fontSize={13} />
+                    <PlayerAvatar avatar={winner.avatar} size={18} fontSize={13} />
                     <Text style={styles.winnerText}>
                       {winner.name}
                     </Text>
@@ -264,7 +264,7 @@ export default function HomeScreen() {
                     const p = getPlayer(tp.playerId);
                     return (
                       <View key={tp.playerId} style={styles.miniScore}>
-                        <PlayerAvatar avatar={p?.avatar ?? "?"} hairMeta={p?.hairMeta} size={18} fontSize={13} />
+                        <PlayerAvatar avatar={p?.avatar ?? "?"} size={18} fontSize={13} />
                         <Text style={styles.miniScorePoints}>
                           {tp.totalPoints}
                         </Text>

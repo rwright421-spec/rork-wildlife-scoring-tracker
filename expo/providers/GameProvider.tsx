@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { DEFAULT_ANIMALS } from "@/constants/animals";
-import { Animal, GameState, Player, PlayerHairMeta, PlayerSightings, Trip, TripPlayer } from "@/types";
+import { Animal, GameState, Player, PlayerSightings, Trip, TripPlayer } from "@/types";
 
 const STORAGE_KEY = "wildlife_spotter_data";
 const ONBOARDING_KEY = "wildlife_spotter_onboarding_complete";
@@ -108,8 +108,8 @@ export const [GameProvider, useGame] = createContextHook(() => {
   );
 
   const addPlayer = useCallback(
-    (name: string, avatar: string, hairMeta?: PlayerHairMeta) => {
-      const player: Player = { id: generateId(), name, avatar, hairMeta };
+    (name: string, avatar: string) => {
+      const player: Player = { id: generateId(), name, avatar };
       updateState((prev) => ({ ...prev, players: [...prev.players, player] }));
       return player;
     },
@@ -117,12 +117,12 @@ export const [GameProvider, useGame] = createContextHook(() => {
   );
 
   const updatePlayer = useCallback(
-    (playerId: string, name: string, avatar: string, hairMeta?: PlayerHairMeta) => {
-      if (__DEV__) console.log('[GameProvider] Updating player:', playerId, 'name:', name, 'avatar:', avatar, 'hairMeta:', hairMeta);
+    (playerId: string, name: string, avatar: string) => {
+      if (__DEV__) console.log('[GameProvider] Updating player:', playerId, 'name:', name, 'avatar:', avatar);
       updateState((prev) => ({
         ...prev,
         players: prev.players.map((p) =>
-          p.id === playerId ? { ...p, name, avatar, hairMeta } : p
+          p.id === playerId ? { ...p, name, avatar } : p
         ),
       }));
     },

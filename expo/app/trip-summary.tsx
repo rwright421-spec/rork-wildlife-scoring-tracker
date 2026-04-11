@@ -266,7 +266,7 @@ export default function TripSummaryScreen() {
                 ]}
               >
                 <View style={styles.winnerGlow}>
-                  <PlayerAvatar avatar={winner.avatar} hairMeta={winner.hairMeta} size={56} fontSize={36} />
+                  <PlayerAvatar avatar={winner.avatar} size={56} fontSize={36} />
                 </View>
                 <View style={styles.winnerInfo}>
                   <View style={styles.winnerLabelRow}>

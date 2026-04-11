@@ -14,14 +14,14 @@ import * as Haptics from "expo-haptics";
 
 import Colors from "@/constants/colors";
 import { AVATAR_OPTIONS } from "@/constants/animals";
-import { Player, PlayerHairMeta } from "@/types";
+import { Player } from "@/types";
 import AvatarPicker from "@/components/AvatarPicker";
 import { KeyboardAccessory, KEYBOARD_ACCESSORY_ID } from "@/components/KeyboardDoneBar";
 
 interface EditPlayerModalProps {
   visible: boolean;
   player: Player | null;
-  onSave: (playerId: string, name: string, avatar: string, hairMeta?: PlayerHairMeta) => void;
+  onSave: (playerId: string, name: string, avatar: string) => void;
   onClose: () => void;
 }
 
@@ -33,13 +33,10 @@ export default function EditPlayerModal({
 }: EditPlayerModalProps) {
   const [name, setName] = useState<string>("");
   const [avatar, setAvatar] = useState<string>(AVATAR_OPTIONS[0]);
-  const [hairMeta, setHairMeta] = useState<PlayerHairMeta | undefined>(undefined);
-
   useEffect(() => {
     if (player && visible) {
       setName(player.name);
       setAvatar(player.avatar);
-      setHairMeta(player.hairMeta);
     }
   }, [player, visible]);
 
@@ -54,9 +51,9 @@ export default function EditPlayerModal({
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     if (__DEV__) console.log("[EditPlayerModal] Saving player:", player.id, "name:", trimmed, "avatar:", avatar);
-    onSave(player.id, trimmed, avatar, hairMeta);
+    onSave(player.id, trimmed, avatar);
     onClose();
-  }, [player, name, avatar, hairMeta, onSave, onClose]);
+  }, [player, name, avatar, onSave, onClose]);
 
   if (!player) return null;
 
@@ -86,7 +83,7 @@ export default function EditPlayerModal({
           <AvatarPicker
             options={AVATAR_OPTIONS}
             selected={avatar}
-            onSelect={(emoji, meta) => { setAvatar(emoji); setHairMeta(meta); }}
+            onSelect={(emoji) => { setAvatar(emoji); }}
             label="Change avatar:"
             size="small"
           />

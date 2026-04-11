@@ -13,7 +13,7 @@ import {
 import Colors from "@/constants/colors";
 import { AVATAR_OPTIONS, ANIMAL_EMOJI_OPTIONS } from "@/constants/animals";
 import { useGame } from "@/providers/GameProvider";
-import { Player, PlayerHairMeta, Trip } from "@/types";
+import { Player, Trip } from "@/types";
 import { KeyboardAccessory, KEYBOARD_ACCESSORY_ID } from "@/components/KeyboardDoneBar";
 import AvatarPicker from "@/components/AvatarPicker";
 import EditPlayerModal from "@/components/EditPlayerModal";
@@ -29,7 +29,7 @@ export default function SettingsScreen() {
   const [selectedAvatar, setSelectedAvatar] = useState<string>(
     AVATAR_OPTIONS[0]
   );
-  const [selectedHairMeta, setSelectedHairMeta] = useState<PlayerHairMeta | undefined>(undefined);
+
   const [showAddPlayer, setShowAddPlayer] = useState<boolean>(false);
   const [newAnimalName, setNewAnimalName] = useState<string>("");
   const [newAnimalEmoji, setNewAnimalEmoji] = useState<string>(ANIMAL_EMOJI_OPTIONS[0]);
@@ -75,13 +75,12 @@ export default function SettingsScreen() {
       Alert.alert("Name Required", "Please enter a name for the player.");
       return;
     }
-    addPlayer(name, selectedAvatar, selectedHairMeta);
+    addPlayer(name, selectedAvatar);
     setNewPlayerName("");
     setSelectedAvatar(AVATAR_OPTIONS[0]);
-    setSelectedHairMeta(undefined);
     setShowAddPlayer(false);
     setPlayerNameWarning("");
-  }, [newPlayerName, selectedAvatar, selectedHairMeta, addPlayer]);
+  }, [newPlayerName, selectedAvatar, addPlayer]);
 
   const handleRemovePlayer = useCallback(
     (playerId: string, playerName: string) => {
@@ -257,7 +256,7 @@ export default function SettingsScreen() {
             <AvatarPicker
               options={AVATAR_OPTIONS}
               selected={selectedAvatar}
-              onSelect={(emoji, meta) => { setSelectedAvatar(emoji); setSelectedHairMeta(meta); }}
+              onSelect={(emoji) => { setSelectedAvatar(emoji); }}
             />
             <Pressable
               style={({ pressed }) => [
@@ -277,7 +276,7 @@ export default function SettingsScreen() {
         )}
         {players.map((player) => (
           <View key={player.id} style={styles.listItem}>
-            <PlayerAvatar avatar={player.avatar} hairMeta={player.hairMeta} size={36} fontSize={22} />
+            <PlayerAvatar avatar={player.avatar} size={36} fontSize={22} />
             <Text style={styles.listName}>{player.name}</Text>
             <Pressable
               style={styles.editBtn}

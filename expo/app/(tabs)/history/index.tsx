@@ -168,7 +168,7 @@ export default function HistoryScreen() {
                 const player = getPlayer(tp.playerId);
                 return (
                   <View key={tp.playerId} style={styles.playerChip}>
-                    <PlayerAvatar avatar={player?.avatar ?? "?"} hairMeta={player?.hairMeta} size={20} fontSize={14} />
+                    <PlayerAvatar avatar={player?.avatar ?? "?"} size={20} fontSize={14} />
                     <Text style={styles.chipPoints}>{tp.totalPoints}</Text>
                   </View>
                 );
