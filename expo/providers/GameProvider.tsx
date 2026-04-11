@@ -167,15 +167,16 @@ export const [GameProvider, useGame] = createContextHook(() => {
     (animalId: string) => {
       updateState((prev) => {
         const updatedTrips = prev.trips.map((trip) => {
-          const hasAnimal = trip.animals.some((a) => a.id === animalId);
+          const hasAnimal = (trip.animals ?? []).some((a) => a.id === animalId);
           if (!hasAnimal) return trip;
+          const animalList = trip.animals ?? [];
           return {
             ...trip,
-            animals: trip.animals.filter((a) => a.id !== animalId),
+            animals: animalList.filter((a) => a.id !== animalId),
             players: trip.players.map((tp) => {
               const removedCount = tp.sightings[animalId] || 0;
               if (removedCount === 0) return tp;
-              const removedAnimal = trip.animals.find((a) => a.id === animalId);
+              const removedAnimal = animalList.find((a) => a.id === animalId);
               const pointsToSubtract = removedCount * (removedAnimal?.points || 0);
               const newSightings = { ...tp.sightings };
               delete newSightings[animalId];
@@ -356,11 +357,23 @@ export const [GameProvider, useGame] = createContextHook(() => {
         ...prev,
         trips: prev.trips.map((trip) => {
           if (trip.id !== tripId) return trip;
+          const tripAnimals = trip.animals ?? prev.animals;
+          const oldAnimal = tripAnimals.find((a) => a.id === animalId);
+          const updatedAnimals = tripAnimals.map((a) =>
+            a.id === animalId ? { ...a, name, emoji, points } : a
+          );
+          const pointsDiff = oldAnimal ? points - oldAnimal.points : 0;
+          const updatedPlayers = pointsDiff !== 0
+            ? trip.players.map((tp) => {
+                const count = tp.sightings[animalId] || 0;
+                if (count === 0) return tp;
+                return { ...tp, totalPoints: Math.max(0, tp.totalPoints + count * pointsDiff) };
+              })
+            : trip.players;
           return {
             ...trip,
-            animals: trip.animals.map((a) =>
-              a.id === animalId ? { ...a, name, emoji, points } : a
-            ),
+            animals: updatedAnimals,
+            players: updatedPlayers,
           };
         }),
       }));
@@ -375,7 +388,7 @@ export const [GameProvider, useGame] = createContextHook(() => {
         ...prev,
         trips: prev.trips.map((trip) => {
           if (trip.id !== tripId) return trip;
-          return { ...trip, animals: [...trip.animals, animal] };
+          return { ...trip, animals: [...(trip.animals ?? prev.animals), animal] };
         }),
       }));
       return animal;
@@ -432,12 +445,13 @@ export const [GameProvider, useGame] = createContextHook(() => {
         ...prev,
         trips: prev.trips.map((trip) => {
           if (trip.id !== tripId) return trip;
+          const tripAnimals = trip.animals ?? prev.animals;
           return {
             ...trip,
-            animals: trip.animals.filter((a) => a.id !== animalId),
+            animals: tripAnimals.filter((a) => a.id !== animalId),
             players: trip.players.map((tp) => {
               const removedCount = tp.sightings[animalId] || 0;
-              const removedAnimal = trip.animals.find((a) => a.id === animalId);
+              const removedAnimal = tripAnimals.find((a) => a.id === animalId);
               const pointsToSubtract = removedCount * (removedAnimal?.points || 0);
               const newSightings = { ...tp.sightings };
               delete newSightings[animalId];
