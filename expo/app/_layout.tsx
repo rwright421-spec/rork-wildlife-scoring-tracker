@@ -9,6 +9,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import Colors from "@/constants/colors";
 import { GameProvider, useGame } from "@/providers/GameProvider";
+import { PurchaseProvider } from "@/providers/PurchaseProvider";
 
 LogBox.ignoreLogs(["Non-serializable values were found in the navigation state"]);
 
@@ -81,6 +82,13 @@ function RootLayoutNav() {
           animation: "fade",
         }}
       />
+      <Stack.Screen
+        name="paywall"
+        options={{
+          headerShown: false,
+          presentation: "modal",
+        }}
+      />
     </Stack>
   );
 }
@@ -94,8 +102,10 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <GameProvider>
-          <StatusBar style="light" />
-          <RootLayoutNav />
+          <PurchaseProvider>
+            <StatusBar style="light" />
+            <RootLayoutNav />
+          </PurchaseProvider>
         </GameProvider>
       </GestureHandlerRootView>
     </QueryClientProvider>

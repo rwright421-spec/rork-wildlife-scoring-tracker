@@ -1,4 +1,5 @@
-import { Check, Pencil, Plus, Trash2, UserPlus, X } from "lucide-react-native";
+import { useRouter } from "expo-router";
+import { Check, Crown, Pencil, Plus, Trash2, UserPlus, X } from "lucide-react-native";
 import React, { useCallback, useState } from "react";
 import {
   Alert,
@@ -13,6 +14,7 @@ import {
 import Colors from "@/constants/colors";
 import { AVATAR_OPTIONS, ANIMAL_EMOJI_OPTIONS } from "@/constants/animals";
 import { useGame } from "@/providers/GameProvider";
+import { usePurchases } from "@/providers/PurchaseProvider";
 import { Player, Trip } from "@/types";
 import { KeyboardAccessory, KEYBOARD_ACCESSORY_ID } from "@/components/KeyboardDoneBar";
 import AvatarPicker from "@/components/AvatarPicker";
@@ -20,6 +22,8 @@ import EditPlayerModal from "@/components/EditPlayerModal";
 import PlayerAvatar from "@/components/PlayerAvatar";
 
 export default function SettingsScreen() {
+  const router = useRouter();
+  const { isPremium } = usePurchases();
   const game = useGame();
   const { players, animals, addPlayer, updatePlayer, removePlayer, addAnimal, removeAnimal, editAnimal } = game;
   const gameState = game;
@@ -227,6 +231,24 @@ export default function SettingsScreen() {
 
   return (
     <><ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      {!isPremium && (
+        <Pressable
+          style={({ pressed }) => [
+            styles.proCard,
+            pressed && styles.proCardPressed,
+          ]}
+          onPress={() => router.push("/paywall")}
+        >
+          <View style={styles.proIconWrap}>
+            <Crown size={20} color={Colors.gold} />
+          </View>
+          <View style={styles.proTextWrap}>
+            <Text style={styles.proTitle}>Upgrade to Pro</Text>
+            <Text style={styles.proSubtitle}>Unlock the full Wildlife Tracker experience</Text>
+          </View>
+          <Text style={styles.proArrow}>{'>'}</Text>
+        </Pressable>
+      )}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Players</Text>
@@ -465,6 +487,50 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.cream },
   content: { padding: 20, paddingBottom: 40 },
+  proCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#1B4332",
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 24,
+    gap: 14,
+    shadowColor: "#1B4332",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  proCardPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.98 }],
+  },
+  proIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: "rgba(218,165,32,0.15)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  proTextWrap: {
+    flex: 1,
+  },
+  proTitle: {
+    fontSize: 16,
+    fontWeight: "700" as const,
+    color: Colors.white,
+    marginBottom: 2,
+  },
+  proSubtitle: {
+    fontSize: 12,
+    color: "rgba(255,255,255,0.7)",
+  },
+  proArrow: {
+    fontSize: 18,
+    color: "rgba(255,255,255,0.5)",
+    fontWeight: "600" as const,
+  },
   section: { marginBottom: 32 },
   sectionHeader: {
     flexDirection: "row",
