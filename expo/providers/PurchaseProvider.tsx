@@ -23,8 +23,17 @@ function getRCToken(): string {
   );
 }
 
+const rcKey = getRCToken();
+
+if (__DEV__) {
+  console.log("[RevenueCat] Initializing SDK");
+  console.log("[RevenueCat] Platform:", Platform.OS);
+  console.log("[RevenueCat] Using key:", rcKey ? `${rcKey.substring(0, 8)}...` : "(empty)");
+  console.log("[RevenueCat] Key source:", __DEV__ || Platform.OS === "web" ? "TEST" : Platform.OS === "ios" ? "iOS" : Platform.OS === "android" ? "Android" : "DEFAULT/TEST");
+}
+
 Purchases.setLogLevel(LOG_LEVEL.DEBUG);
-Purchases.configure({ apiKey: getRCToken() });
+Purchases.configure({ apiKey: rcKey });
 
 function checkPremium(info: CustomerInfo): boolean {
   return info.entitlements.active[ENTITLEMENT_ID] !== undefined;
@@ -39,6 +48,13 @@ export const [PurchaseProvider, usePurchases] = createContextHook(() => {
     queryFn: async () => {
       try {
         const info = await Purchases.getCustomerInfo();
+        if (__DEV__) {
+          console.log("[RevenueCat] Customer info received");
+          console.log("[RevenueCat] Active entitlements:", Object.keys(info.entitlements.active));
+          console.log("[RevenueCat] Entitlement 'Wildlife Tracker Pro' active:", info.entitlements.active[ENTITLEMENT_ID] !== undefined);
+          console.log("[RevenueCat] Active subscriptions:", info.activeSubscriptions);
+          console.log("[RevenueCat] All purchased product IDs:", info.allPurchasedProductIdentifiers);
+        }
         return info;
       } catch (e) {
         console.log("[PurchaseProvider] Failed to get customer info:", e);
