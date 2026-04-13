@@ -90,7 +90,7 @@ export default function ActiveTripScreen() {
 
   const sortedPlayers = useMemo(() => {
     if (!currentTrip) return [];
-    return [...currentTrip.players].sort((a, b) => b.totalPoints - a.totalPoints);
+    return [...currentTrip.players].sort((a, b) => a.name.localeCompare(b.name));
   }, [currentTrip]);
 
   const showSnackbar = useCallback((action: LastAction) => {
