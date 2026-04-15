@@ -314,7 +314,7 @@ export default function NewTripScreen() {
                 autoFocus
                 returnKeyType="done"
                 blurOnSubmit
-                maxLength={20}
+                maxLength={INPUT_LIMITS.PLAYER_NAME}
                 inputAccessoryViewID={KEYBOARD_ACCESSORY_ID}
               />
               {playerNameWarning ? <Text style={styles.warningText}>{playerNameWarning}</Text> : null}

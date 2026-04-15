@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ANIMAL_EMOJI_OPTIONS, AVATAR_OPTIONS, getNameForEmoji } from "@/constants/animals";
 import { FREE_PLAYER_LIMIT, FREE_CUSTOM_ANIMAL_LIMIT } from "@/constants/limits";
 import { Animal, Player } from "@/types";
+import { sanitizeTextInput, INPUT_LIMITS } from "@/utils/sanitize";
 
 import Colors from "@/constants/colors";
 import { useGame } from "@/providers/GameProvider";
@@ -232,7 +233,7 @@ export default function ActiveTripScreen() {
 
   const handleCreateAndAddPlayer = useCallback(() => {
     if (!currentTrip) return;
-    const name = newPlayerName.trim();
+    const name = sanitizeTextInput(newPlayerName, INPUT_LIMITS.PLAYER_NAME);
     if (!name) { Alert.alert("Missing name", "Please enter a player name."); return; }
     if (!isPremium && players.length >= FREE_PLAYER_LIMIT) {
       Alert.alert(
@@ -270,7 +271,7 @@ export default function ActiveTripScreen() {
 
   const saveTripDetails = useCallback(() => {
     if (!currentTrip) return;
-    const name = editTripName.trim();
+    const name = sanitizeTextInput(editTripName, INPUT_LIMITS.TRIP_NAME);
     if (!name) { Alert.alert("Missing name", "Please enter a trip name."); return; }
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
     if (!dateRegex.test(editTripStartDate)) { Alert.alert("Invalid date", "Use YYYY-MM-DD format."); return; }
@@ -313,7 +314,7 @@ export default function ActiveTripScreen() {
 
   const saveEdit = useCallback(() => {
     if (!currentTrip) return;
-    const name = editName.trim();
+    const name = sanitizeTextInput(editName, INPUT_LIMITS.ANIMAL_NAME);
     const pts = parseInt(editPoints, 10);
     if (!name) { Alert.alert("Missing name", "Please enter an animal name."); return; }
     if (isNaN(pts) || pts < 1) { Alert.alert("Invalid points", "Points must be between 1 and 1000."); return; }
@@ -505,7 +506,7 @@ export default function ActiveTripScreen() {
                 <Text style={styles.editFormTitle}>Edit Trip Details</Text>
                 <View>
                   <Text style={styles.editFieldLabel}>Trip Name</Text>
-                  <TextInput style={styles.editInput} value={editTripName} onChangeText={setEditTripName} placeholder="Trip name" placeholderTextColor={Colors.textLight} returnKeyType="done" blurOnSubmit maxLength={30} inputAccessoryViewID={KEYBOARD_ACCESSORY_ID} />
+                  <TextInput style={styles.editInput} value={editTripName} onChangeText={setEditTripName} placeholder="Trip name" placeholderTextColor={Colors.textLight} returnKeyType="done" blurOnSubmit maxLength={INPUT_LIMITS.TRIP_NAME} inputAccessoryViewID={KEYBOARD_ACCESSORY_ID} />
                 </View>
                 <View>
                   <Text style={styles.editFieldLabel}>Start Date (YYYY-MM-DD)</Text>
@@ -553,7 +554,7 @@ export default function ActiveTripScreen() {
                 <View style={styles.editFieldRow}>
                   <View style={styles.editFieldFlex}>
                     <Text style={styles.editFieldLabel}>Name</Text>
-                    <TextInput style={styles.editInput} value={editName} onChangeText={(t) => { setEditName(t); checkDuplicateAnimalName(t); }} placeholder="Animal name" placeholderTextColor={Colors.textLight} returnKeyType="done" blurOnSubmit maxLength={20} inputAccessoryViewID={KEYBOARD_ACCESSORY_ID} />
+                    <TextInput style={styles.editInput} value={editName} onChangeText={(t) => { setEditName(t); checkDuplicateAnimalName(t); }} placeholder="Animal name" placeholderTextColor={Colors.textLight} returnKeyType="done" blurOnSubmit maxLength={INPUT_LIMITS.ANIMAL_NAME} inputAccessoryViewID={KEYBOARD_ACCESSORY_ID} />
                   </View>
                   <View style={styles.editFieldSmall}>
                     <Text style={styles.editFieldLabel}>Points</Text>
@@ -632,7 +633,7 @@ export default function ActiveTripScreen() {
                 )}
                 <View>
                   <Text style={styles.editFieldLabel}>Name</Text>
-                  <TextInput style={styles.editInput} value={newPlayerName} onChangeText={(t) => { setNewPlayerName(t); checkDuplicatePlayerName(t); }} placeholder="Player name" placeholderTextColor={Colors.textLight} autoFocus returnKeyType="done" blurOnSubmit maxLength={20} inputAccessoryViewID={KEYBOARD_ACCESSORY_ID} />
+                  <TextInput style={styles.editInput} value={newPlayerName} onChangeText={(t) => { setNewPlayerName(t); checkDuplicatePlayerName(t); }} placeholder="Player name" placeholderTextColor={Colors.textLight} autoFocus returnKeyType="done" blurOnSubmit maxLength={INPUT_LIMITS.PLAYER_NAME} inputAccessoryViewID={KEYBOARD_ACCESSORY_ID} />
                   {playerNameWarning ? <Text style={styles.warningText}>{playerNameWarning}</Text> : null}
                 </View>
                 <View style={styles.editFormActions}>

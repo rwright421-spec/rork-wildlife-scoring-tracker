@@ -7,6 +7,7 @@ import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, Vi
 
 import Colors from "@/constants/colors";
 import { useGame } from "@/providers/GameProvider";
+import { sanitizeTextInput, INPUT_LIMITS } from "@/utils/sanitize";
 import PlayerAvatar from "@/components/PlayerAvatar";
 import { KeyboardAccessory, KEYBOARD_ACCESSORY_ID } from "@/components/KeyboardDoneBar";
 
@@ -37,7 +38,7 @@ export default function TripDetailScreen() {
 
   const saveEdits = useCallback(() => {
     if (!trip) return;
-    const name = editName.trim();
+    const name = sanitizeTextInput(editName, INPUT_LIMITS.TRIP_NAME);
     if (!name) { Alert.alert("Missing name", "Please enter a trip name."); return; }
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
     if (!dateRegex.test(editStartDate)) { Alert.alert("Invalid date", "Start date must be YYYY-MM-DD."); return; }
@@ -85,7 +86,7 @@ export default function TripDetailScreen() {
             <Text style={styles.editSectionTitle}>Edit Trip Details</Text>
             <View>
               <Text style={styles.editFieldLabel}>Trip Name</Text>
-              <TextInput style={styles.editInput} value={editName} onChangeText={setEditName} placeholder="Trip name" placeholderTextColor={Colors.textLight} returnKeyType="done" blurOnSubmit maxLength={30} inputAccessoryViewID={KEYBOARD_ACCESSORY_ID} />
+              <TextInput style={styles.editInput} value={editName} onChangeText={setEditName} placeholder="Trip name" placeholderTextColor={Colors.textLight} returnKeyType="done" blurOnSubmit maxLength={INPUT_LIMITS.TRIP_NAME} inputAccessoryViewID={KEYBOARD_ACCESSORY_ID} />
             </View>
             <View>
               <Text style={styles.editFieldLabel}>Start Date (YYYY-MM-DD)</Text>

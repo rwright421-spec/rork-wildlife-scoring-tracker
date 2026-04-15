@@ -18,6 +18,7 @@ import { FREE_PLAYER_LIMIT, FREE_CUSTOM_ANIMAL_LIMIT } from "@/constants/limits"
 import { useGame } from "@/providers/GameProvider";
 import { usePurchases } from "@/providers/PurchaseProvider";
 import { Player, Trip } from "@/types";
+import { sanitizeTextInput, INPUT_LIMITS } from "@/utils/sanitize";
 import { KeyboardAccessory, KEYBOARD_ACCESSORY_ID } from "@/components/KeyboardDoneBar";
 import AvatarPicker from "@/components/AvatarPicker";
 import EditPlayerModal from "@/components/EditPlayerModal";
@@ -79,7 +80,7 @@ export default function SettingsScreen() {
   const customAnimalCount = React.useMemo(() => animals.filter((a) => !a.isDefault).length, [animals]);
 
   const handleAddPlayer = useCallback(() => {
-    const name = newPlayerName.trim();
+    const name = sanitizeTextInput(newPlayerName, INPUT_LIMITS.PLAYER_NAME);
     if (!name) {
       Alert.alert("Name Required", "Please enter a name for the player.");
       return;
@@ -141,7 +142,7 @@ export default function SettingsScreen() {
   );
 
   const handleAddAnimal = useCallback(() => {
-    const name = newAnimalName.trim();
+    const name = sanitizeTextInput(newAnimalName, INPUT_LIMITS.ANIMAL_NAME);
     const emoji = newAnimalEmoji.trim();
     const points = parseInt(newAnimalPoints, 10);
     if (!name || (!noEmojiMode && !emoji)) {
@@ -229,7 +230,7 @@ export default function SettingsScreen() {
 
   const handleSaveEdit = useCallback(() => {
     if (!editingAnimalId) return;
-    const name = editName.trim();
+    const name = sanitizeTextInput(editName, INPUT_LIMITS.ANIMAL_NAME);
     const emoji = editEmoji.trim();
     const points = parseInt(editPoints, 10);
     if (!name || !emoji) {
@@ -299,7 +300,7 @@ export default function SettingsScreen() {
               testID="player-name-input"
               returnKeyType="done"
               blurOnSubmit
-              maxLength={20}
+              maxLength={INPUT_LIMITS.PLAYER_NAME}
               inputAccessoryViewID={KEYBOARD_ACCESSORY_ID}
             />
             {playerNameWarning ? <Text style={styles.warningText}>{playerNameWarning}</Text> : null}
@@ -399,7 +400,7 @@ export default function SettingsScreen() {
                 onChangeText={(t) => { setNewAnimalName(t); setAnimalNameWarning(checkDuplicateAnimalName(t)); }}
                 returnKeyType="done"
                 blurOnSubmit
-                maxLength={20}
+                maxLength={INPUT_LIMITS.ANIMAL_NAME}
                 inputAccessoryViewID={KEYBOARD_ACCESSORY_ID}
               />
               <TextInput
@@ -453,7 +454,7 @@ export default function SettingsScreen() {
                     onChangeText={(t) => { setEditName(t); setEditAnimalNameWarning(checkDuplicateAnimalName(t, editingAnimalId ?? undefined)); }}
                     returnKeyType="done"
                     blurOnSubmit
-                    maxLength={20}
+                    maxLength={INPUT_LIMITS.ANIMAL_NAME}
                     inputAccessoryViewID={KEYBOARD_ACCESSORY_ID}
                   />
                   <TextInput

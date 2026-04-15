@@ -15,6 +15,7 @@ import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
 import { AVATAR_OPTIONS } from "@/constants/animals";
 import { Player } from "@/types";
+import { sanitizeTextInput, INPUT_LIMITS } from "@/utils/sanitize";
 import AvatarPicker from "@/components/AvatarPicker";
 import { KeyboardAccessory, KEYBOARD_ACCESSORY_ID } from "@/components/KeyboardDoneBar";
 
@@ -42,7 +43,7 @@ export default function EditPlayerModal({
 
   const handleSave = useCallback(() => {
     if (!player) return;
-    const trimmed = name.trim();
+    const trimmed = sanitizeTextInput(name, INPUT_LIMITS.PLAYER_NAME);
     if (!trimmed) {
       Alert.alert("Name Required", "Please enter a name for the player.");
       return;
@@ -97,7 +98,7 @@ export default function EditPlayerModal({
             placeholderTextColor={Colors.textLight}
             returnKeyType="done"
             blurOnSubmit
-            maxLength={20}
+            maxLength={INPUT_LIMITS.PLAYER_NAME}
             inputAccessoryViewID={KEYBOARD_ACCESSORY_ID}
             testID="edit-player-name-input"
           />

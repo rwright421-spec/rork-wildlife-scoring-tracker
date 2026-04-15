@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DEFAULT_ANIMALS } from "@/constants/animals";
 import { GameStateSchema } from "@/providers/gameStateSchema";
 import { Animal, GameState, Player, PlayerSightings, Trip, TripPlayer } from "@/types";
+import { sanitizeTextInput, validatePointValue, INPUT_LIMITS } from "@/utils/sanitize";
 
 const STORAGE_KEY = "wildlife_spotter_data";
 const ONBOARDING_KEY = "wildlife_spotter_onboarding_complete";
@@ -114,7 +115,12 @@ export const [GameProvider, useGame] = createContextHook(() => {
 
   const addPlayer = useCallback(
     (name: string, avatar: string) => {
-      const player: Player = { id: generateId(), name, avatar };
+      const sanitized = sanitizeTextInput(name, INPUT_LIMITS.PLAYER_NAME);
+      if (!sanitized) {
+        if (__DEV__) console.warn('[GameProvider] addPlayer rejected: empty name after sanitization');
+        return { id: '', name: '', avatar } as Player;
+      }
+      const player: Player = { id: generateId(), name: sanitized, avatar };
       updateState((prev) => ({ ...prev, players: [...prev.players, player] }));
       return player;
     },
@@ -123,11 +129,16 @@ export const [GameProvider, useGame] = createContextHook(() => {
 
   const updatePlayer = useCallback(
     (playerId: string, name: string, avatar: string) => {
-      if (__DEV__) console.log('[GameProvider] Updating player:', playerId, 'name:', name, 'avatar:', avatar);
+      const sanitized = sanitizeTextInput(name, INPUT_LIMITS.PLAYER_NAME);
+      if (!sanitized) {
+        if (__DEV__) console.warn('[GameProvider] updatePlayer rejected: empty name after sanitization');
+        return;
+      }
+      if (__DEV__) console.log('[GameProvider] Updating player:', playerId, 'name:', sanitized, 'avatar:', avatar);
       updateState((prev) => ({
         ...prev,
         players: prev.players.map((p) =>
-          p.id === playerId ? { ...p, name, avatar } : p
+          p.id === playerId ? { ...p, name: sanitized, avatar } : p
         ),
       }));
     },
@@ -156,11 +167,21 @@ export const [GameProvider, useGame] = createContextHook(() => {
 
   const addAnimal = useCallback(
     (name: string, emoji: string, points: number) => {
+      const sanitizedName = sanitizeTextInput(name, INPUT_LIMITS.ANIMAL_NAME);
+      const validPoints = validatePointValue(points);
+      if (!sanitizedName) {
+        if (__DEV__) console.warn('[GameProvider] addAnimal rejected: empty name after sanitization');
+        return;
+      }
+      if (validPoints === null) {
+        if (__DEV__) console.warn('[GameProvider] addAnimal rejected: invalid points', points);
+        return;
+      }
       const animal: Animal = {
         id: generateId(),
-        name,
+        name: sanitizedName,
         emoji,
-        points,
+        points: validPoints,
         isDefault: false,
       };
       updateState((prev) => ({ ...prev, animals: [...prev.animals, animal] }));
@@ -205,10 +226,16 @@ export const [GameProvider, useGame] = createContextHook(() => {
 
   const editAnimal = useCallback(
     (animalId: string, name: string, emoji: string, points: number) => {
+      const sanitizedName = sanitizeTextInput(name, INPUT_LIMITS.ANIMAL_NAME);
+      const validPoints = validatePointValue(points);
+      if (!sanitizedName || validPoints === null) {
+        if (__DEV__) console.warn('[GameProvider] editAnimal rejected: invalid name or points');
+        return;
+      }
       updateState((prev) => ({
         ...prev,
         animals: prev.animals.map((a) =>
-          a.id === animalId ? { ...a, name, emoji, points } : a
+          a.id === animalId ? { ...a, name: sanitizedName, emoji, points: validPoints } : a
         ),
       }));
     },
@@ -217,6 +244,7 @@ export const [GameProvider, useGame] = createContextHook(() => {
 
   const startTrip = useCallback(
     (name: string, playerIds: string[], tripAnimals: Animal[]) => {
+      const sanitizedName = sanitizeTextInput(name, INPUT_LIMITS.TRIP_NAME);
       const tripPlayers: TripPlayer[] = playerIds.map((pid) => ({
         playerId: pid,
         sightings: {},
@@ -224,7 +252,7 @@ export const [GameProvider, useGame] = createContextHook(() => {
       }));
       const trip: Trip = {
         id: generateId(),
-        name,
+        name: sanitizedName || `Trip ${new Date().toLocaleDateString()}`,
         startDate: new Date().toISOString(),
         endDate: null,
         isActive: true,
@@ -362,6 +390,12 @@ export const [GameProvider, useGame] = createContextHook(() => {
 
   const updateTripAnimal = useCallback(
     (tripId: string, animalId: string, name: string, emoji: string, points: number) => {
+      const sanitizedName = sanitizeTextInput(name, INPUT_LIMITS.ANIMAL_NAME);
+      const validPoints = validatePointValue(points);
+      if (!sanitizedName || validPoints === null) {
+        if (__DEV__) console.warn('[GameProvider] updateTripAnimal rejected: invalid name or points');
+        return;
+      }
       updateState((prev) => ({
         ...prev,
         trips: prev.trips.map((trip) => {
@@ -369,9 +403,9 @@ export const [GameProvider, useGame] = createContextHook(() => {
           const tripAnimals = trip.animals ?? prev.animals;
           const oldAnimal = tripAnimals.find((a) => a.id === animalId);
           const updatedAnimals = tripAnimals.map((a) =>
-            a.id === animalId ? { ...a, name, emoji, points } : a
+            a.id === animalId ? { ...a, name: sanitizedName, emoji, points: validPoints } : a
           );
-          const pointsDiff = oldAnimal ? points - oldAnimal.points : 0;
+          const pointsDiff = oldAnimal ? validPoints - oldAnimal.points : 0;
           const updatedPlayers = pointsDiff !== 0
             ? trip.players.map((tp) => {
                 const count = tp.sightings[animalId] || 0;
@@ -392,7 +426,13 @@ export const [GameProvider, useGame] = createContextHook(() => {
 
   const addTripAnimal = useCallback(
     (tripId: string, name: string, emoji: string, points: number) => {
-      const animal: Animal = { id: generateId(), name, emoji, points, isDefault: false };
+      const sanitizedName = sanitizeTextInput(name, INPUT_LIMITS.ANIMAL_NAME);
+      const validPoints = validatePointValue(points);
+      if (!sanitizedName || validPoints === null) {
+        if (__DEV__) console.warn('[GameProvider] addTripAnimal rejected: invalid name or points');
+        return { id: '', name: '', emoji: '', points: 0, isDefault: false } as Animal;
+      }
+      const animal: Animal = { id: generateId(), name: sanitizedName, emoji, points: validPoints, isDefault: false };
       updateState((prev) => ({
         ...prev,
         trips: prev.trips.map((trip) => {
@@ -450,11 +490,20 @@ export const [GameProvider, useGame] = createContextHook(() => {
 
   const updateTrip = useCallback(
     (tripId: string, updates: { name?: string; startDate?: string; endDate?: string | null }) => {
-      if (__DEV__) console.log('[GameProvider] Updating trip:', tripId, updates);
+      const sanitizedUpdates = { ...updates };
+      if (sanitizedUpdates.name !== undefined) {
+        const sanitizedName = sanitizeTextInput(sanitizedUpdates.name, INPUT_LIMITS.TRIP_NAME);
+        if (!sanitizedName) {
+          if (__DEV__) console.warn('[GameProvider] updateTrip rejected: empty name after sanitization');
+          return;
+        }
+        sanitizedUpdates.name = sanitizedName;
+      }
+      if (__DEV__) console.log('[GameProvider] Updating trip:', tripId, sanitizedUpdates);
       updateState((prev) => ({
         ...prev,
         trips: prev.trips.map((trip) =>
-          trip.id === tripId ? { ...trip, ...updates } : trip
+          trip.id === tripId ? { ...trip, ...sanitizedUpdates } : trip
         ),
       }));
     },
