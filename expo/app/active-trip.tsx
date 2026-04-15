@@ -33,7 +33,7 @@ interface CelebrationData {
 export default function ActiveTripScreen() {
   const insets = useSafeAreaInsets();
   const { tripId } = useLocalSearchParams<{ tripId: string }>();
-  const { activeTrips, getTrip, getPlayer, getTripAnimals, recordSighting, undoSighting, updateTripAnimal, addTripAnimal, removeTripAnimal, players, addPlayer, updatePlayer, addPlayerToTrip, removePlayerFromTrip, deleteTrip } = useGame();
+  const { activeTrips, getTrip, getPlayer, getTripAnimals, recordSighting, undoSighting, updateTripAnimal, addTripAnimal, removeTripAnimal, players, addPlayer, updatePlayer, addPlayerToTrip, removePlayerFromTrip, deleteTrip, updateTrip } = useGame();
   const { isPremium } = usePurchases();
   const [editPlayerModalVisible, setEditPlayerModalVisible] = useState<boolean>(false);
   const [editingPlayerId, setEditingPlayerId] = useState<string | null>(null);
@@ -54,6 +54,9 @@ export default function ActiveTripScreen() {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [addPlayerModalVisible, setAddPlayerModalVisible] = useState(false);
+  const [editTripName, setEditTripName] = useState("");
+  const [editTripStartDate, setEditTripStartDate] = useState("");
+  const [isEditingTripDetails, setIsEditingTripDetails] = useState(false);
   const [isCreatingNewPlayer, setIsCreatingNewPlayer] = useState(false);
   const [newPlayerName, setNewPlayerName] = useState("");
   const [pointsError, setPointsError] = useState<string>("");
@@ -252,8 +255,30 @@ export default function ActiveTripScreen() {
     setEditingAnimal(null);
     setIsAddingNew(false);
     setShowEmojiPicker(false);
+    setIsEditingTripDetails(false);
     setEditModalVisible(true);
   }, []);
+
+  const startEditTripDetails = useCallback(() => {
+    if (!currentTrip) return;
+    setEditTripName(currentTrip.name);
+    setEditTripStartDate(new Date(currentTrip.startDate).toISOString().split('T')[0]);
+    setIsEditingTripDetails(true);
+  }, [currentTrip]);
+
+  const saveTripDetails = useCallback(() => {
+    if (!currentTrip) return;
+    const name = editTripName.trim();
+    if (!name) { Alert.alert("Missing name", "Please enter a trip name."); return; }
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(editTripStartDate)) { Alert.alert("Invalid date", "Use YYYY-MM-DD format."); return; }
+    const parsedDate = new Date(editTripStartDate + 'T12:00:00');
+    if (isNaN(parsedDate.getTime())) { Alert.alert("Invalid date", "Please enter a valid date."); return; }
+    if (Platform.OS !== "web") { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }
+    updateTrip(currentTrip.id, { name, startDate: parsedDate.toISOString() });
+    setIsEditingTripDetails(false);
+    if (__DEV__) console.log('[ActiveTrip] Updated trip details:', name, editTripStartDate);
+  }, [currentTrip, editTripName, editTripStartDate, updateTrip]);
 
   const startEditAnimal = useCallback((animal: Animal) => {
     setEditingAnimal(animal);
@@ -457,8 +482,19 @@ export default function ActiveTripScreen() {
               </Pressable>
             </View>
 
-            {!(editingAnimal || isAddingNew) && (
+            {!(editingAnimal || isAddingNew) && !isEditingTripDetails && (
               <>
+                <Pressable
+                  onPress={startEditTripDetails}
+                  style={styles.addPlayerMenuBtn}
+                  testID="edit-trip-details-btn"
+                >
+                  <Settings size={20} color={Colors.primary} />
+                  <View style={styles.addPlayerMenuInfo}>
+                    <Text style={styles.addPlayerMenuTitle}>Edit Trip Details</Text>
+                    <Text style={styles.addPlayerMenuSub}>Change name or start date</Text>
+                  </View>
+                </Pressable>
                 <Pressable
                   onPress={() => { setEditModalVisible(false); setTimeout(() => openAddPlayerModal(), 300); }}
                   style={styles.addPlayerMenuBtn}
@@ -497,7 +533,23 @@ export default function ActiveTripScreen() {
               </>
             )}
 
-            {(editingAnimal || isAddingNew) ? (
+            {isEditingTripDetails ? (
+              <View style={styles.editForm}>
+                <Text style={styles.editFormTitle}>Edit Trip Details</Text>
+                <View>
+                  <Text style={styles.editFieldLabel}>Trip Name</Text>
+                  <TextInput style={styles.editInput} value={editTripName} onChangeText={setEditTripName} placeholder="Trip name" placeholderTextColor={Colors.textLight} returnKeyType="done" blurOnSubmit maxLength={30} inputAccessoryViewID={KEYBOARD_ACCESSORY_ID} />
+                </View>
+                <View>
+                  <Text style={styles.editFieldLabel}>Start Date (YYYY-MM-DD)</Text>
+                  <TextInput style={styles.editInput} value={editTripStartDate} onChangeText={setEditTripStartDate} placeholder="2024-01-15" placeholderTextColor={Colors.textLight} returnKeyType="done" blurOnSubmit maxLength={10} inputAccessoryViewID={KEYBOARD_ACCESSORY_ID} />
+                </View>
+                <View style={styles.editFormActions}>
+                  <Pressable onPress={() => setIsEditingTripDetails(false)} style={styles.editCancelBtn}><Text style={styles.editCancelBtnText}>Cancel</Text></Pressable>
+                  <Pressable onPress={saveTripDetails} style={styles.editSaveBtn}><Check size={18} color={Colors.white} /><Text style={styles.editSaveBtnText}>Save</Text></Pressable>
+                </View>
+              </View>
+            ) : (editingAnimal || isAddingNew) ? (
               <View style={styles.editForm}>
                 <Text style={styles.editFormTitle}>{isAddingNew ? "Add New Animal" : "Edit " + editingAnimal?.name}</Text>
                 <Pressable onPress={() => setShowEmojiPicker(!showEmojiPicker)} style={styles.emojiSelector}>

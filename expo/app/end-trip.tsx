@@ -23,11 +23,17 @@ export default function EndTripScreen() {
     }
   }, [currentTrip]);
 
-  const [selectedWinnerId, setSelectedWinnerId] = useState<string | null>(null);
   const sortedPlayers = useMemo(() => {
     if (!currentTrip) return [];
     return [...currentTrip.players].sort((a, b) => b.totalPoints - a.totalPoints);
   }, [currentTrip]);
+
+  const [selectedWinnerId, setSelectedWinnerId] = useState<string | null>(() => {
+    if (!currentTrip) return null;
+    const sorted = [...currentTrip.players].sort((a, b) => b.totalPoints - a.totalPoints);
+    if (sorted.length > 0 && sorted[0].totalPoints > 0) return sorted[0].playerId;
+    return null;
+  });
 
   const handleEndTrip = useCallback(() => {
     if (!currentTrip) return;

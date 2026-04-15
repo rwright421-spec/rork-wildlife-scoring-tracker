@@ -439,6 +439,19 @@ export const [GameProvider, useGame] = createContextHook(() => {
     [updateState]
   );
 
+  const updateTrip = useCallback(
+    (tripId: string, updates: { name?: string; startDate?: string; endDate?: string | null }) => {
+      if (__DEV__) console.log('[GameProvider] Updating trip:', tripId, updates);
+      updateState((prev) => ({
+        ...prev,
+        trips: prev.trips.map((trip) =>
+          trip.id === tripId ? { ...trip, ...updates } : trip
+        ),
+      }));
+    },
+    [updateState]
+  );
+
   const removeTripAnimal = useCallback(
     (tripId: string, animalId: string) => {
       updateState((prev) => ({
@@ -495,6 +508,7 @@ export const [GameProvider, useGame] = createContextHook(() => {
     addPlayerToTrip,
     removePlayerFromTrip,
     deleteTrip,
+    updateTrip,
     completeOnboarding,
   };
 });
