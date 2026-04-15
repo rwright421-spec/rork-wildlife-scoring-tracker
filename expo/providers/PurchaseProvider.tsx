@@ -25,6 +25,10 @@ function getRCToken(): string {
 
 const rcKey = getRCToken();
 
+if (!rcKey) {
+  console.warn('Missing RevenueCat API key — purchases will not work. Check EXPO_PUBLIC_REVENUECAT_TEST_API_KEY / EXPO_PUBLIC_REVENUECAT_IOS_API_KEY / EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY in your .env file.');
+}
+
 if (__DEV__) {
   console.log("[RevenueCat] Initializing SDK");
   console.log("[RevenueCat] Platform:", Platform.OS);
