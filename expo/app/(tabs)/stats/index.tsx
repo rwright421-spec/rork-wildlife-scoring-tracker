@@ -7,6 +7,12 @@ import Colors from "@/constants/colors";
 import { useGame, usePlayerStats } from "@/providers/GameProvider";
 import PlayerAvatar from "@/components/PlayerAvatar";
 
+function ordinal(n: number): string {
+  const s = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
 export default function StatsScreen() {
   const { animals, players, completedTrips, activeTrips } = useGame();
   const { stats: playerStats, activeTripCount } = usePlayerStats();
@@ -34,7 +40,7 @@ export default function StatsScreen() {
         </View>
       )}
       {playerStats.map((stat) => (
-        <View key={stat.player.id} style={styles.playerCard}>
+        <View key={stat.player.id} style={styles.playerCard} accessibilityLabel={`${stat.player.name}, ${stat.totalPoints} lifetime points, ${stat.wins} win${stat.wins !== 1 ? "s" : ""}`}>
           <View style={styles.playerHeader}>
             <PlayerAvatar avatar={stat.player.avatar} size={44} fontSize={26} />
             <View style={styles.playerNameSection}>
@@ -46,24 +52,24 @@ export default function StatsScreen() {
           </View>
           <View style={styles.statsGrid}>
             <View style={styles.statItem}>
-              <View style={[styles.statIcon, { backgroundColor: "#EDF5F0" }]}>
+              <View style={[styles.statIcon, { backgroundColor: "#EDF5F0" }]} accessibilityElementsHidden={true}>
                 <Star size={18} color={Colors.primary} />
               </View>
-              <Text style={styles.statValue}>{stat.totalPoints}</Text>
+              <Text style={styles.statValue} accessibilityLabel={`${stat.totalPoints} lifetime points`}>{stat.totalPoints}</Text>
               <Text style={styles.statLabel}>Lifetime Pts</Text>
             </View>
             <View style={styles.statItem}>
-              <View style={[styles.statIcon, { backgroundColor: "#FFF7ED" }]}>
+              <View style={[styles.statIcon, { backgroundColor: "#FFF7ED" }]} accessibilityElementsHidden={true}>
                 <TrendingUp size={18} color={Colors.accent} />
               </View>
-              <Text style={styles.statValue}>{stat.avgPerDay}</Text>
+              <Text style={styles.statValue} accessibilityLabel={`${stat.avgPerDay} average per day`}>{stat.avgPerDay}</Text>
               <Text style={styles.statLabel}>Avg/Day</Text>
             </View>
             <View style={styles.statItem}>
-              <View style={[styles.statIcon, { backgroundColor: "#FFFBEB" }]}>
+              <View style={[styles.statIcon, { backgroundColor: "#FFFBEB" }]} accessibilityElementsHidden={true}>
                 <Trophy size={18} color={Colors.gold} />
               </View>
-              <Text style={styles.statValue}>{stat.wins}</Text>
+              <Text style={styles.statValue} accessibilityLabel={`${stat.wins} win${stat.wins !== 1 ? "s" : ""}`}>{stat.wins}</Text>
               <Text style={styles.statLabel}>Wins</Text>
             </View>
           </View>
@@ -118,8 +124,8 @@ export default function StatsScreen() {
               const medals = ["🥇", "🥈", "🥉"];
               const medal = index < 3 ? medals[index] : "";
               return (
-                <View key={stat.player.id} style={styles.leaderRow}>
-                  <Text style={styles.leaderMedal}>{medal}</Text>
+                <View key={stat.player.id} style={styles.leaderRow} accessibilityLabel={`${medal ? ordinal(index + 1) + " place, " : ""}${stat.player.name}, ${stat.wins} win${stat.wins !== 1 ? "s" : ""}`}>
+                  <Text style={styles.leaderMedal} accessibilityElementsHidden={true}>{medal}</Text>
                   <PlayerAvatar avatar={stat.player.avatar} size={28} fontSize={18} />
                   <Text style={styles.leaderName}>{stat.player.name}</Text>
                   <Text style={styles.leaderWins}>

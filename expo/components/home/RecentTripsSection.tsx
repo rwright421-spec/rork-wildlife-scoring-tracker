@@ -38,6 +38,8 @@ export default function RecentTripsSection({
                 params: { id: trip.id },
               })
             }
+            accessibilityRole="button"
+            accessibilityLabel={`Trip: ${trip.name}${winner ? `, won by ${winner.name}` : ""}`}
           >
             <View style={styles.recentTripHeader}>
               <MapPin size={16} color={Colors.primary} />
@@ -53,6 +55,8 @@ export default function RecentTripsSection({
                   pressed && styles.deleteBtnPressed,
                 ]}
                 testID={`delete-recent-trip-${trip.id}`}
+                accessibilityRole="button"
+                accessibilityLabel={`Delete trip ${trip.name}`}
               >
                 <Trash2 size={15} color={Colors.danger} />
               </Pressable>
@@ -61,7 +65,7 @@ export default function RecentTripsSection({
               {new Date(trip.startDate).toLocaleDateString()}
             </Text>
             {winner && (
-              <View style={styles.winnerRow}>
+              <View style={styles.winnerRow} accessibilityLabel={`Winner: ${winner.name}`}>
                 <Trophy size={14} color={Colors.gold} />
                 <PlayerAvatar avatar={winner.avatar} size={18} fontSize={13} />
                 <Text style={styles.winnerText}>

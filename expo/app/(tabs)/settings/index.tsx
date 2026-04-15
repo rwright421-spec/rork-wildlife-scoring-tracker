@@ -268,6 +268,8 @@ export default function SettingsScreen() {
             pressed && styles.proCardPressed,
           ]}
           onPress={() => router.push("/paywall")}
+          accessibilityRole="button"
+          accessibilityLabel="Upgrade to Pro"
         >
           <View style={styles.proIconWrap}>
             <Crown size={20} color={Colors.gold} />
@@ -285,6 +287,8 @@ export default function SettingsScreen() {
           <Pressable
             style={styles.addBtn}
             onPress={() => setShowAddPlayer(!showAddPlayer)}
+            accessibilityRole="button"
+            accessibilityLabel={showAddPlayer ? "Cancel adding player" : "Add player"}
           >
             <UserPlus size={18} color={Colors.primary} />
             <Text style={styles.addBtnText}>Add</Text>
@@ -316,6 +320,8 @@ export default function SettingsScreen() {
                 pressed && styles.confirmBtnPressed,
               ]}
               onPress={handleAddPlayer}
+              accessibilityRole="button"
+              accessibilityLabel="Confirm add player"
             >
               <Text style={styles.confirmBtnText}>Add Player</Text>
             </Pressable>
@@ -333,12 +339,16 @@ export default function SettingsScreen() {
             <Pressable
               style={styles.editBtn}
               onPress={() => { setEditingPlayer(player); setEditPlayerModalVisible(true); }}
+              accessibilityRole="button"
+              accessibilityLabel={`Edit ${player.name}`}
             >
               <Pencil size={16} color={Colors.primaryLight} />
             </Pressable>
             <Pressable
               style={styles.deleteBtn}
               onPress={() => handleRemovePlayer(player.id, player.name)}
+              accessibilityRole="button"
+              accessibilityLabel={`Delete ${player.name}`}
             >
               <Trash2 size={18} color={Colors.danger} />
             </Pressable>
@@ -354,6 +364,8 @@ export default function SettingsScreen() {
           <Pressable
             style={styles.addBtn}
             onPress={() => setShowAddAnimal(!showAddAnimal)}
+            accessibilityRole="button"
+            accessibilityLabel={showAddAnimal ? "Cancel adding animal" : "Add animal"}
           >
             <Plus size={18} color={Colors.primary} />
             <Text style={styles.addBtnText}>Add</Text>
@@ -422,6 +434,8 @@ export default function SettingsScreen() {
                 pressed && styles.confirmBtnPressed,
               ]}
               onPress={handleAddAnimal}
+              accessibilityRole="button"
+              accessibilityLabel="Confirm add animal"
             >
               <Text style={styles.confirmBtnText}>Add Animal</Text>
             </Pressable>
@@ -478,6 +492,8 @@ export default function SettingsScreen() {
                       pressed && styles.cancelBtnPressed,
                     ]}
                     onPress={cancelEditing}
+                    accessibilityRole="button"
+                    accessibilityLabel="Cancel editing animal"
                   >
                     <X size={16} color={Colors.brownMuted} />
                     <Text style={styles.cancelBtnText}>Cancel</Text>
@@ -489,6 +505,8 @@ export default function SettingsScreen() {
                       pressed && styles.saveBtnPressed,
                     ]}
                     onPress={handleSaveEdit}
+                    accessibilityRole="button"
+                    accessibilityLabel="Save animal changes"
                   >
                     <Check size={16} color={Colors.white} />
                     <Text style={styles.saveBtnText}>Save</Text>
@@ -511,12 +529,16 @@ export default function SettingsScreen() {
                 <Pressable
                   style={styles.editBtn}
                   onPress={() => startEditing(animal.id)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Edit ${animal.name}`}
                 >
                   <Pencil size={16} color={Colors.primaryLight} />
                 </Pressable>
                 <Pressable
                   style={styles.deleteBtn}
                   onPress={() => handleRemoveAnimal(animal.id, animal.name)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Delete ${animal.name}`}
                 >
                   <Trash2 size={18} color={Colors.danger} />
                 </Pressable>
@@ -536,6 +558,9 @@ export default function SettingsScreen() {
             restorePurchases();
           }}
           disabled={isRestoring}
+          accessibilityRole="button"
+          accessibilityLabel={restoreSuccess ? "Purchases restored" : "Restore purchases"}
+          accessibilityState={{ disabled: isRestoring }}
         >
           {isRestoring ? (
             <ActivityIndicator color={Colors.primary} size="small" />

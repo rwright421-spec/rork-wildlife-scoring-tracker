@@ -29,6 +29,9 @@ function AnimalGrid({ animals, sightings, playerId, onSighting, onUndo }: Animal
                 ]}
                 onPress={() => onUndo(playerId, animal.id)}
                 disabled={count === 0}
+                accessibilityRole="button"
+                accessibilityLabel={`Undo ${animal.name} sighting`}
+                accessibilityState={{ disabled: count === 0 }}
               >
                 <Minus size={12} color={count > 0 ? Colors.brownMuted : Colors.textLight} />
               </Pressable>
@@ -40,6 +43,9 @@ function AnimalGrid({ animals, sightings, playerId, onSighting, onUndo }: Animal
                 pressed && styles.animalButtonPressed,
               ]}
               onPress={() => onSighting(playerId, animal.id)}
+              accessibilityRole="button"
+              accessibilityLabel={`${animal.name} — ${animal.points} point${animal.points !== 1 ? "s" : ""}`}
+              accessibilityHint={`Log ${animal.name} sighting`}
             >
               {animal.emoji ? (
                 <Text style={styles.animalEmoji}>{animal.emoji}</Text>

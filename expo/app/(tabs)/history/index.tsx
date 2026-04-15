@@ -58,7 +58,7 @@ function SwipeableTripCard({ trip, onDelete, children }: { trip: Trip; onDelete:
   return (
     <View style={swipeStyles.wrapper}>
       <View style={swipeStyles.deleteBackground}>
-        <Pressable onPress={handleDeletePress} style={swipeStyles.deleteBtn}>
+        <Pressable onPress={handleDeletePress} style={swipeStyles.deleteBtn} accessibilityRole="button" accessibilityLabel={`Delete trip ${trip.name}`}>
           <Trash2 size={20} color={Colors.white} />
           <Text style={swipeStyles.deleteBtnText}>Delete</Text>
         </Pressable>
@@ -78,6 +78,9 @@ function SwipeableTripCard({ trip, onDelete, children }: { trip: Trip; onDelete:
           onLongPress={handleLongPress}
           delayLongPress={500}
           style={({ pressed }) => [styles.tripCard, pressed && !isOpen.current && styles.pressed]}
+          accessibilityRole="button"
+          accessibilityLabel={`Trip: ${trip.name}`}
+          accessibilityHint="Tap to view details, long press to delete"
         >
           {children}
         </Pressable>
@@ -156,7 +159,7 @@ export default function HistoryScreen() {
               })}
             </Text>
             {winner && (
-              <View style={styles.winnerRow}>
+              <View style={styles.winnerRow} accessibilityLabel={`Winner: ${winner.name}`}>
                 <Trophy size={14} color={Colors.gold} />
                 <Text style={styles.winnerName}>
                   {winner.name}
@@ -167,7 +170,7 @@ export default function HistoryScreen() {
               {sortedPlayers.map((tp) => {
                 const player = getPlayer(tp.playerId);
                 return (
-                  <View key={tp.playerId} style={styles.playerChip}>
+                  <View key={tp.playerId} style={styles.playerChip} accessibilityLabel={`${player?.name ?? "Unknown"}, ${tp.totalPoints} points`}>
                     <PlayerAvatar avatar={player?.avatar ?? "?"} size={20} fontSize={14} />
                     <Text style={styles.chipPoints}>{tp.totalPoints}</Text>
                   </View>

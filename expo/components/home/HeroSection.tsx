@@ -18,7 +18,7 @@ export default function HeroSection({ repeatPreview, onRepeatLastTrip }: HeroSec
   return (
     <>
       <View style={styles.heroSection}>
-        <View style={styles.heroIcon}>
+        <View style={styles.heroIcon} accessibilityElementsHidden={true}>
           <Text style={styles.heroEmoji}>🦌</Text>
         </View>
         <Text style={styles.heroTitle}>Ready for an Adventure?</Text>
@@ -35,6 +35,8 @@ export default function HeroSection({ repeatPreview, onRepeatLastTrip }: HeroSec
           ]}
           onPress={onRepeatLastTrip}
           testID="repeat-trip-button"
+          accessibilityRole="button"
+          accessibilityLabel={`Repeat last trip with ${repeatPreview.playerNames.join(", ")} and ${repeatPreview.animalCount} animal${repeatPreview.animalCount !== 1 ? "s" : ""}`}
         >
           <View style={styles.repeatHeader}>
             <View style={styles.repeatIconWrap}>

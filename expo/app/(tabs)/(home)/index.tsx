@@ -143,6 +143,8 @@ export default function HomeScreen() {
         ]}
         onPress={handleStartTrip}
         testID="start-trip-button"
+        accessibilityRole="button"
+        accessibilityLabel="Start new trip"
       >
         <Plus size={22} color={Colors.white} />
         <Text style={styles.startButtonText}>Start New Trip</Text>

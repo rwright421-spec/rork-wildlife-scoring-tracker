@@ -31,12 +31,17 @@ function PlayerList({ sortedPlayers, tripAnimals, getPlayer, onSighting, onUndo,
                     onEditPlayer(player.id);
                   }
                 }}
+                accessibilityRole="button"
+                accessibilityLabel={`Edit ${player?.name ?? "Unknown"}`}
               >
-                {isLeader && <Text style={styles.crownEmoji}>👑</Text>}
+                {isLeader && <Text style={styles.crownEmoji} accessibilityElementsHidden={true}>👑</Text>}
                 <PlayerAvatar avatar={player?.avatar ?? "🧑"} size={36} fontSize={22} />
                 <Text style={styles.playerName}>{player?.name ?? "Unknown"}</Text>
               </Pressable>
-              <View style={styles.pointsBadge}>
+              <View
+                style={styles.pointsBadge}
+                accessibilityLabel={`${player?.name ?? "Unknown"}, ${tp.totalPoints} points${isLeader ? ", 1st place" : ""}`}
+              >
                 <Text style={styles.pointsValue}>{tp.totalPoints}</Text>
                 <Text style={styles.pointsLabel}>pts</Text>
               </View>

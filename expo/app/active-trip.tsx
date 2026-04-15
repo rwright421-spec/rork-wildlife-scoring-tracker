@@ -404,7 +404,7 @@ export default function ActiveTripScreen() {
         <Stack.Screen options={{ headerShown: false }} />
         <View style={styles.noTrip}>
           <Text style={styles.noTripText}>No active trip</Text>
-          <Pressable style={styles.backBtn} onPress={() => router.back()}><Text style={styles.backBtnText}>Go Back</Text></Pressable>
+          <Pressable style={styles.backBtn} onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Go back"><Text style={styles.backBtnText}>Go Back</Text></Pressable>
         </View>
       </View>
     );
@@ -431,7 +431,7 @@ export default function ActiveTripScreen() {
         />
       </ScrollView>
       {celebration && (
-        <Animated.View style={[styles.celebrationOverlay, { opacity: celebrationOpacity }]} pointerEvents="none">
+        <Animated.View style={[styles.celebrationOverlay, { opacity: celebrationOpacity }]} pointerEvents="none" accessibilityElementsHidden={true}>
           <Animated.Text style={[styles.celebrationEmoji, { transform: [{ scale: celebrationScale }] }]}>
             {celebration.emoji}
           </Animated.Text>
@@ -446,7 +446,7 @@ export default function ActiveTripScreen() {
           <View style={[styles.modalContainer, { paddingBottom: insets.bottom + 16 }]}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Trip Settings</Text>
-              <Pressable onPress={() => setEditModalVisible(false)} style={styles.modalCloseBtn}>
+              <Pressable onPress={() => setEditModalVisible(false)} style={styles.modalCloseBtn} accessibilityRole="button" accessibilityLabel="Close trip settings">
                 <X size={22} color={Colors.brown} />
               </Pressable>
             </View>
@@ -457,6 +457,8 @@ export default function ActiveTripScreen() {
                   onPress={startEditTripDetails}
                   style={styles.addPlayerMenuBtn}
                   testID="edit-trip-details-btn"
+                  accessibilityRole="button"
+                  accessibilityLabel="Edit trip details"
                 >
                   <Settings size={20} color={Colors.primary} />
                   <View style={styles.addPlayerMenuInfo}>
@@ -468,6 +470,8 @@ export default function ActiveTripScreen() {
                   onPress={() => { setEditModalVisible(false); setTimeout(() => openAddPlayerModal(), 300); }}
                   style={styles.addPlayerMenuBtn}
                   testID="add-player-btn"
+                  accessibilityRole="button"
+                  accessibilityLabel="Add player to trip"
                 >
                   <UserPlus size={20} color={Colors.primary} />
                   <View style={styles.addPlayerMenuInfo}>
@@ -491,6 +495,8 @@ export default function ActiveTripScreen() {
                             onPress={() => handleRemovePlayerFromTrip(tp.playerId, player?.name ?? "this player", tp.totalPoints)}
                             style={styles.removePlayerBtn}
                             hitSlop={8}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Remove ${player?.name ?? "player"} from trip`}
                           >
                             <Trash2 size={16} color={Colors.danger} />
                           </Pressable>
@@ -514,8 +520,8 @@ export default function ActiveTripScreen() {
                   <TextInput style={styles.editInput} value={editTripStartDate} onChangeText={setEditTripStartDate} placeholder="2024-01-15" placeholderTextColor={Colors.textLight} returnKeyType="done" blurOnSubmit maxLength={10} inputAccessoryViewID={KEYBOARD_ACCESSORY_ID} />
                 </View>
                 <View style={styles.editFormActions}>
-                  <Pressable onPress={() => setIsEditingTripDetails(false)} style={styles.editCancelBtn}><Text style={styles.editCancelBtnText}>Cancel</Text></Pressable>
-                  <Pressable onPress={saveTripDetails} style={styles.editSaveBtn}><Check size={18} color={Colors.white} /><Text style={styles.editSaveBtnText}>Save</Text></Pressable>
+                  <Pressable onPress={() => setIsEditingTripDetails(false)} style={styles.editCancelBtn} accessibilityRole="button" accessibilityLabel="Cancel editing trip details"><Text style={styles.editCancelBtnText}>Cancel</Text></Pressable>
+                  <Pressable onPress={saveTripDetails} style={styles.editSaveBtn} accessibilityRole="button" accessibilityLabel="Save trip details"><Check size={18} color={Colors.white} /><Text style={styles.editSaveBtnText}>Save</Text></Pressable>
                 </View>
               </View>
             ) : (editingAnimal || isAddingNew) ? (
@@ -565,8 +571,8 @@ export default function ActiveTripScreen() {
                 {animalNameWarning ? <Text style={styles.warningText}>{animalNameWarning}</Text> : null}
                 {pointsError ? <Text style={styles.errorText}>{pointsError}</Text> : null}
                 <View style={styles.editFormActions}>
-                  <Pressable onPress={cancelEdit} style={styles.editCancelBtn}><Text style={styles.editCancelBtnText}>Cancel</Text></Pressable>
-                  <Pressable onPress={saveEdit} style={styles.editSaveBtn}><Check size={18} color={Colors.white} /><Text style={styles.editSaveBtnText}>Save</Text></Pressable>
+                  <Pressable onPress={cancelEdit} style={styles.editCancelBtn} accessibilityRole="button" accessibilityLabel="Cancel editing animal"><Text style={styles.editCancelBtnText}>Cancel</Text></Pressable>
+                  <Pressable onPress={saveEdit} style={styles.editSaveBtn} accessibilityRole="button" accessibilityLabel={isAddingNew ? "Save new animal" : `Save changes to ${editingAnimal?.name ?? "animal"}`}><Check size={18} color={Colors.white} /><Text style={styles.editSaveBtnText}>Save</Text></Pressable>
                 </View>
               </View>
             ) : (
@@ -574,7 +580,7 @@ export default function ActiveTripScreen() {
                 {tripAnimals.map((animal) => {
                   const totalSightings = currentTrip ? currentTrip.players.reduce((sum, tp) => sum + (tp.sightings[animal.id] || 0), 0) : 0;
                   return (
-                    <Pressable key={animal.id} style={styles.animalListItem} onPress={() => startEditAnimal(animal)}>
+                    <Pressable key={animal.id} style={styles.animalListItem} onPress={() => startEditAnimal(animal)} accessibilityRole="button" accessibilityLabel={`Edit ${animal.name}, ${animal.points} points`}>
                       {animal.emoji ? (
                         <Text style={styles.animalListEmoji}>{animal.emoji}</Text>
                       ) : (
@@ -586,18 +592,18 @@ export default function ActiveTripScreen() {
                         <Text style={styles.animalListName}>{animal.name}</Text>
                         <Text style={styles.animalListMeta}>{animal.points} pts{totalSightings > 0 ? " · " + totalSightings + " sighting" + (totalSightings !== 1 ? "s" : "") : ""}</Text>
                       </View>
-                      <Pressable onPress={() => handleRemoveAnimal(animal)} style={styles.animalDeleteBtn} hitSlop={8}>
+                      <Pressable onPress={() => handleRemoveAnimal(animal)} style={styles.animalDeleteBtn} hitSlop={8} accessibilityRole="button" accessibilityLabel={`Remove ${animal.name}`}>
                         <Trash2 size={18} color={Colors.danger} />
                       </Pressable>
                     </Pressable>
                   );
                 })}
-                <Pressable onPress={startAddAnimal} style={styles.addAnimalBtn}>
+                <Pressable onPress={startAddAnimal} style={styles.addAnimalBtn} accessibilityRole="button" accessibilityLabel="Add animal">
                   <Plus size={20} color={Colors.primary} />
                   <Text style={styles.addAnimalBtnText}>Add Animal</Text>
                 </Pressable>
                 <View style={styles.deleteTripDivider} />
-                <Pressable onPress={handleDeleteTrip} style={styles.deleteTripBtn} testID="delete-trip-btn">
+                <Pressable onPress={handleDeleteTrip} style={styles.deleteTripBtn} testID="delete-trip-btn" accessibilityRole="button" accessibilityLabel="Delete trip">
                   <Trash2 size={18} color={Colors.dangerLight} />
                   <Text style={styles.deleteTripBtnText}>Delete Trip</Text>
                 </Pressable>
@@ -612,7 +618,7 @@ export default function ActiveTripScreen() {
           <View style={[styles.modalContainer, { paddingBottom: insets.bottom + 16 }]}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>{isCreatingNewPlayer ? "New Player" : "Add Player"}</Text>
-              <Pressable onPress={() => setAddPlayerModalVisible(false)} style={styles.modalCloseBtn}>
+              <Pressable onPress={() => setAddPlayerModalVisible(false)} style={styles.modalCloseBtn} accessibilityRole="button" accessibilityLabel="Close add player">
                 <X size={22} color={Colors.brown} />
               </Pressable>
             </View>
@@ -638,10 +644,10 @@ export default function ActiveTripScreen() {
                   {playerNameWarning ? <Text style={styles.warningText}>{playerNameWarning}</Text> : null}
                 </View>
                 <View style={styles.editFormActions}>
-                  <Pressable onPress={() => { setIsCreatingNewPlayer(false); setPlayerNameWarning(""); }} style={styles.editCancelBtn}>
+                  <Pressable onPress={() => { setIsCreatingNewPlayer(false); setPlayerNameWarning(""); }} style={styles.editCancelBtn} accessibilityRole="button" accessibilityLabel={availablePlayers.length > 0 ? "Back to player list" : "Cancel creating player"}>
                     <Text style={styles.editCancelBtnText}>{availablePlayers.length > 0 ? "Back" : "Cancel"}</Text>
                   </Pressable>
-                  <Pressable onPress={handleCreateAndAddPlayer} style={styles.editSaveBtn}>
+                  <Pressable onPress={handleCreateAndAddPlayer} style={styles.editSaveBtn} accessibilityRole="button" accessibilityLabel="Add new player">
                     <Check size={18} color={Colors.white} />
                     <Text style={styles.editSaveBtnText}>Add</Text>
                   </Pressable>
@@ -651,7 +657,7 @@ export default function ActiveTripScreen() {
               <ScrollView style={styles.animalListScroll} contentContainerStyle={styles.animalListContent}>
                 {availablePlayers.length > 0 ? (
                   availablePlayers.map((player) => (
-                    <Pressable key={player.id} style={styles.playerListItem} onPress={() => handleSelectExistingPlayer(player)}>
+                    <Pressable key={player.id} style={styles.playerListItem} onPress={() => handleSelectExistingPlayer(player)} accessibilityRole="button" accessibilityLabel={`Add ${player.name} to trip`}>
                       <PlayerAvatar avatar={player.avatar} size={32} fontSize={20} />
                       <Text style={styles.playerListName}>{player.name}</Text>
                       <Plus size={18} color={Colors.primary} />
@@ -662,7 +668,7 @@ export default function ActiveTripScreen() {
                     <Text style={styles.noPlayersMsgText}>All players are already in this trip</Text>
                   </View>
                 )}
-                <Pressable onPress={() => { setIsCreatingNewPlayer(true); setNewPlayerName(""); setNewPlayerAvatar("🧑"); setShowAvatarPicker(false); }} style={styles.addAnimalBtn}>
+                <Pressable onPress={() => { setIsCreatingNewPlayer(true); setNewPlayerName(""); setNewPlayerAvatar("🧑"); setShowAvatarPicker(false); }} style={styles.addAnimalBtn} accessibilityRole="button" accessibilityLabel="Create new player">
                   <UserPlus size={20} color={Colors.primary} />
                   <Text style={styles.addAnimalBtnText}>Create New Player</Text>
                 </Pressable>
@@ -689,6 +695,8 @@ export default function ActiveTripScreen() {
               onPress={handleUndoLast}
               style={({ pressed }) => [styles.snackbarBtn, pressed && styles.snackbarBtnPressed]}
               testID="undo-last-tap"
+              accessibilityRole="button"
+              accessibilityLabel={`Undo ${lastAction?.animalEmoji ?? ""} ${lastAction?.playerName ?? ""} sighting`}
             >
               <Text style={styles.snackbarBtnText}>Undo</Text>
             </Pressable>

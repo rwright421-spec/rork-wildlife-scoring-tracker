@@ -31,7 +31,7 @@ export default function ActiveTripsSection({
     <View style={styles.activeSection}>
       <View style={styles.activeSectionHeader}>
         <View style={styles.activeBadgeRow}>
-          <View style={styles.liveDot} />
+          <View style={styles.liveDot} accessibilityElementsHidden={true} />
           <Text style={styles.activeSectionTitle}>
             Active Trip{activeTrips.length > 1 ? "s" : ""}
           </Text>
@@ -51,6 +51,8 @@ export default function ActiveTripsSection({
             ]}
             onPress={() => onGoToTrip(trip.id)}
             testID={`active-trip-card-${trip.id}`}
+            accessibilityRole="button"
+            accessibilityLabel={`Active trip: ${trip.name}, ${duration} elapsed. Tap to score`}
           >
             <View style={styles.activeTripTop}>
               <View style={styles.activeTripInfo}>
@@ -62,7 +64,7 @@ export default function ActiveTripsSection({
                   <Text style={styles.durationText}>{duration}</Text>
                 </View>
               </View>
-              <View style={styles.livePill}>
+              <View style={styles.livePill} accessibilityElementsHidden={true}>
                 <View style={styles.livePillDot} />
                 <Text style={styles.livePillText}>LIVE</Text>
               </View>
@@ -70,8 +72,8 @@ export default function ActiveTripsSection({
 
             <View style={styles.activeTripBottom}>
               {leader ? (
-                <View style={styles.leaderRow}>
-                  <Text style={styles.leaderEmoji}>👑</Text>
+                <View style={styles.leaderRow} accessibilityLabel={`Leader: ${leader.name}, ${leader.points} points`}>
+                  <Text style={styles.leaderEmoji} accessibilityElementsHidden={true}>👑</Text>
                   <PlayerAvatar avatar={leader.avatar} size={24} fontSize={16} />
                   <Text style={styles.leaderName} numberOfLines={1}>
                     {leader.name}
@@ -104,7 +106,7 @@ export default function ActiveTripsSection({
               </View>
             </View>
 
-            <View style={styles.tapHint}>
+            <View style={styles.tapHint} accessibilityElementsHidden={true}>
               <Play size={12} color={Colors.cream} />
               <Text style={styles.tapHintText}>Tap to score</Text>
             </View>

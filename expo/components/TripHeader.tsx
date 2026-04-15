@@ -15,21 +15,21 @@ interface TripHeaderProps {
 function TripHeader({ tripName, paddingTop, onBack, onSettings, onEndTrip }: TripHeaderProps) {
   return (
     <View style={[styles.header, { paddingTop }]}>
-      <Pressable onPress={onBack} style={styles.headerBack}>
+      <Pressable onPress={onBack} style={styles.headerBack} accessibilityRole="button" accessibilityLabel="Go back">
         <ArrowLeft size={22} color={Colors.cream} />
       </Pressable>
       <View style={styles.headerCenter}>
         <Text style={styles.headerTitle} numberOfLines={1}>{tripName}</Text>
-        <View style={styles.headerLive}>
+        <View style={styles.headerLive} accessibilityElementsHidden={true}>
           <View style={styles.headerLiveDot} />
           <Text style={styles.headerLiveText}>LIVE</Text>
         </View>
       </View>
       <View style={styles.headerActions}>
-        <Pressable onPress={onSettings} style={styles.editAnimalsBtn} testID="edit-animals-btn">
+        <Pressable onPress={onSettings} style={styles.editAnimalsBtn} testID="edit-animals-btn" accessibilityRole="button" accessibilityLabel="Trip settings">
           <Settings size={18} color={Colors.cream} />
         </Pressable>
-        <Pressable onPress={onEndTrip} style={styles.endTripBtn}>
+        <Pressable onPress={onEndTrip} style={styles.endTripBtn} accessibilityRole="button" accessibilityLabel="End trip">
           <Square size={16} color={Colors.dangerLight} fill={Colors.dangerLight} />
           <Text style={styles.endTripBtnText}>End</Text>
         </Pressable>
