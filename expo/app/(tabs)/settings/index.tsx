@@ -14,6 +14,7 @@ import {
 
 import Colors from "@/constants/colors";
 import { AVATAR_OPTIONS, ANIMAL_EMOJI_OPTIONS, getNameForEmoji } from "@/constants/animals";
+import { ANIMAL_POINTS_MIN, ANIMAL_POINTS_MAX } from "@/constants/config";
 import { FREE_PLAYER_LIMIT, FREE_CUSTOM_ANIMAL_LIMIT } from "@/constants/limits";
 import { useGame } from "@/providers/GameProvider";
 import { usePurchases } from "@/providers/PurchaseProvider";
@@ -58,8 +59,8 @@ export default function SettingsScreen() {
     if (!value) { setError(""); return; }
     const num = parseInt(value, 10);
     if (isNaN(num)) { setError("Enter a valid number"); return; }
-    if (num < 1) { setError("Minimum is 1"); return; }
-    if (num > 1000) { setError("Maximum is 1000"); return; }
+    if (num < ANIMAL_POINTS_MIN) { setError(`Minimum is ${ANIMAL_POINTS_MIN}`); return; }
+    if (num > ANIMAL_POINTS_MAX) { setError(`Maximum is ${ANIMAL_POINTS_MAX}`); return; }
     setError("");
   }, []);
 
@@ -152,12 +153,12 @@ export default function SettingsScreen() {
       );
       return;
     }
-    if (isNaN(points) || points < 1) {
-      Alert.alert("Invalid Points", "Points must be between 1 and 1000.");
+    if (isNaN(points) || points < ANIMAL_POINTS_MIN) {
+      Alert.alert("Invalid Points", `Points must be between ${ANIMAL_POINTS_MIN} and ${ANIMAL_POINTS_MAX}.`);
       return;
     }
-    if (points > 1000) {
-      Alert.alert("Invalid Points", "Points must be between 1 and 1000.");
+    if (points > ANIMAL_POINTS_MAX) {
+      Alert.alert("Invalid Points", `Points must be between ${ANIMAL_POINTS_MIN} and ${ANIMAL_POINTS_MAX}.`);
       return;
     }
     if (!isPremium && customAnimalCount >= FREE_CUSTOM_ANIMAL_LIMIT) {
@@ -237,12 +238,12 @@ export default function SettingsScreen() {
       Alert.alert("Missing Info", "Name and emoji are required.");
       return;
     }
-    if (isNaN(points) || points < 1) {
-      Alert.alert("Invalid Points", "Points must be between 1 and 1000.");
+    if (isNaN(points) || points < ANIMAL_POINTS_MIN) {
+      Alert.alert("Invalid Points", `Points must be between ${ANIMAL_POINTS_MIN} and ${ANIMAL_POINTS_MAX}.`);
       return;
     }
-    if (points > 1000) {
-      Alert.alert("Invalid Points", "Points must be between 1 and 1000.");
+    if (points > ANIMAL_POINTS_MAX) {
+      Alert.alert("Invalid Points", `Points must be between ${ANIMAL_POINTS_MIN} and ${ANIMAL_POINTS_MAX}.`);
       return;
     }
     editAnimal(editingAnimalId, name, emoji, points);

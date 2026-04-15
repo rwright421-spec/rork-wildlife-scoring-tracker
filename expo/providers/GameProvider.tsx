@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { DEFAULT_ANIMALS } from "@/constants/animals";
+import { DEBOUNCE_SAVE_DELAY_MS } from "@/constants/config";
 import { GameStateSchema } from "@/providers/gameStateSchema";
 import { Animal, GameState, Player, PlayerSightings, Trip, TripPlayer } from "@/types";
 import { sanitizeTextInput, validatePointValue, INPUT_LIMITS } from "@/utils/sanitize";
@@ -88,7 +89,7 @@ export const [GameProvider, useGame] = createContextHook(() => {
         pendingStateRef.current = null;
       }
       saveTimerRef.current = null;
-    }, 300);
+    }, DEBOUNCE_SAVE_DELAY_MS);
   }, [flushToStorage]);
 
   useEffect(() => {

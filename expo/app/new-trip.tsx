@@ -6,6 +6,7 @@ import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, Vi
 
 import Colors from "@/constants/colors";
 import { ANIMAL_EMOJI_OPTIONS, AVATAR_OPTIONS, NO_EMOJI, getNameForEmoji } from "@/constants/animals";
+import { ANIMAL_POINTS_MIN, ANIMAL_POINTS_MAX } from "@/constants/config";
 import { FREE_PLAYER_LIMIT, FREE_CUSTOM_ANIMAL_LIMIT } from "@/constants/limits";
 import { useGame } from "@/providers/GameProvider";
 import { usePurchases } from "@/providers/PurchaseProvider";
@@ -78,8 +79,8 @@ export default function NewTripScreen() {
     if (!value) { setError(""); return; }
     const num = parseInt(value, 10);
     if (isNaN(num)) { setError("Enter a valid number"); return; }
-    if (num < 1) { setError("Minimum is 1"); return; }
-    if (num > 1000) { setError("Maximum is 1000"); return; }
+    if (num < ANIMAL_POINTS_MIN) { setError(`Minimum is ${ANIMAL_POINTS_MIN}`); return; }
+    if (num > ANIMAL_POINTS_MAX) { setError(`Maximum is ${ANIMAL_POINTS_MAX}`); return; }
     setError("");
   }, []);
 
@@ -166,8 +167,8 @@ export default function NewTripScreen() {
     const name = newAnimalName.trim();
     const points = parseInt(newAnimalPoints, 10);
     if (!name) { Alert.alert("Missing Info", "Please enter a name for the animal."); return; }
-    if (isNaN(points) || points < 1) { Alert.alert("Invalid Points", "Points must be between 1 and 1000."); return; }
-    if (points > 1000) { Alert.alert("Invalid Points", "Points must be between 1 and 1000."); return; }
+    if (isNaN(points) || points < ANIMAL_POINTS_MIN) { Alert.alert("Invalid Points", `Points must be between ${ANIMAL_POINTS_MIN} and ${ANIMAL_POINTS_MAX}.`); return; }
+    if (points > ANIMAL_POINTS_MAX) { Alert.alert("Invalid Points", `Points must be between ${ANIMAL_POINTS_MIN} and ${ANIMAL_POINTS_MAX}.`); return; }
     if (!isPremium && customTripAnimalCount >= FREE_CUSTOM_ANIMAL_LIMIT) {
       Alert.alert(
         "Custom Animal Limit",
@@ -215,8 +216,8 @@ export default function NewTripScreen() {
     const name = editName.trim();
     const points = parseInt(editPoints, 10);
     if (!name) { Alert.alert("Missing Info", "Name is required."); return; }
-    if (isNaN(points) || points < 1) { Alert.alert("Invalid Points", "Points must be between 1 and 1000."); return; }
-    if (points > 1000) { Alert.alert("Invalid Points", "Points must be between 1 and 1000."); return; }
+    if (isNaN(points) || points < ANIMAL_POINTS_MIN) { Alert.alert("Invalid Points", `Points must be between ${ANIMAL_POINTS_MIN} and ${ANIMAL_POINTS_MAX}.`); return; }
+    if (points > ANIMAL_POINTS_MAX) { Alert.alert("Invalid Points", `Points must be between ${ANIMAL_POINTS_MIN} and ${ANIMAL_POINTS_MAX}.`); return; }
     setTripAnimals((prev) => prev.map((a) => a.id === editingAnimalId ? { ...a, name, emoji: editEmoji, points } : a));
     setPointsError("");
     setEditAnimalNameWarning("");

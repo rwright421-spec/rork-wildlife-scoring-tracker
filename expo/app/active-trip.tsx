@@ -6,6 +6,7 @@ import { Alert, Animated, FlatList, Modal, Platform, Pressable, ScrollView, Styl
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ANIMAL_EMOJI_OPTIONS, AVATAR_OPTIONS, getNameForEmoji } from "@/constants/animals";
+import { ANIMAL_POINTS_MIN, ANIMAL_POINTS_MAX, SNACKBAR_TIMEOUT_MS } from "@/constants/config";
 import { FREE_PLAYER_LIMIT, FREE_CUSTOM_ANIMAL_LIMIT } from "@/constants/limits";
 import { Animal, Player } from "@/types";
 import { sanitizeTextInput, INPUT_LIMITS } from "@/utils/sanitize";
@@ -77,8 +78,8 @@ export default function ActiveTripScreen() {
     if (!value) { setPointsError(""); return; }
     const num = parseInt(value, 10);
     if (isNaN(num)) { setPointsError("Enter a valid number"); return; }
-    if (num < 1) { setPointsError("Minimum is 1"); return; }
-    if (num > 1000) { setPointsError("Maximum is 1000"); return; }
+    if (num < ANIMAL_POINTS_MIN) { setPointsError(`Minimum is ${ANIMAL_POINTS_MIN}`); return; }
+    if (num > ANIMAL_POINTS_MAX) { setPointsError(`Maximum is ${ANIMAL_POINTS_MAX}`); return; }
     setPointsError("");
   }, []);
 
@@ -110,7 +111,7 @@ export default function ActiveTripScreen() {
       Animated.timing(snackbarOpacity, { toValue: 0, duration: 300, useNativeDriver: true }).start(() => {
         setLastAction(null);
       });
-    }, 5000);
+    }, SNACKBAR_TIMEOUT_MS);
   }, [snackbarOpacity]);
 
   const handleUndoLast = useCallback(() => {
@@ -317,8 +318,8 @@ export default function ActiveTripScreen() {
     const name = sanitizeTextInput(editName, INPUT_LIMITS.ANIMAL_NAME);
     const pts = parseInt(editPoints, 10);
     if (!name) { Alert.alert("Missing name", "Please enter an animal name."); return; }
-    if (isNaN(pts) || pts < 1) { Alert.alert("Invalid points", "Points must be between 1 and 1000."); return; }
-    if (pts > 1000) { Alert.alert("Invalid points", "Points must be between 1 and 1000."); return; }
+    if (isNaN(pts) || pts < ANIMAL_POINTS_MIN) { Alert.alert("Invalid points", `Points must be between ${ANIMAL_POINTS_MIN} and ${ANIMAL_POINTS_MAX}.`); return; }
+    if (pts > ANIMAL_POINTS_MAX) { Alert.alert("Invalid points", `Points must be between ${ANIMAL_POINTS_MIN} and ${ANIMAL_POINTS_MAX}.`); return; }
     if (isAddingNew && !isPremium && customTripAnimalCount >= FREE_CUSTOM_ANIMAL_LIMIT) {
       Alert.alert(
         "Custom Animal Limit",
