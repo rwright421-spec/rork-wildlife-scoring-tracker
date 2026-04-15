@@ -5,7 +5,7 @@ import React, { useCallback, useMemo, useState } from "react";
 import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
 import Colors from "@/constants/colors";
-import { ANIMAL_EMOJI_OPTIONS, AVATAR_OPTIONS } from "@/constants/animals";
+import { ANIMAL_EMOJI_OPTIONS, AVATAR_OPTIONS, NO_EMOJI, getNameForEmoji } from "@/constants/animals";
 import { FREE_PLAYER_LIMIT, FREE_CUSTOM_ANIMAL_LIMIT } from "@/constants/limits";
 import { useGame } from "@/providers/GameProvider";
 import { usePurchases } from "@/providers/PurchaseProvider";
@@ -57,7 +57,8 @@ export default function NewTripScreen() {
   const [showAddAnimal, setShowAddAnimal] = useState<boolean>(false);
   const [newAnimalName, setNewAnimalName] = useState<string>("");
   const [newAnimalEmoji, setNewAnimalEmoji] = useState<string>(ANIMAL_EMOJI_OPTIONS[0]);
-  const [newAnimalPoints, setNewAnimalPoints] = useState<string>("");
+  const [newAnimalPoints, setNewAnimalPoints] = useState<string>("1");
+  const [noEmojiMode, setNoEmojiMode] = useState<boolean>(false);
 
   const [showAddPlayer, setShowAddPlayer] = useState<boolean>(false);
   const [newPlayerName, setNewPlayerName] = useState<string>("");
@@ -178,15 +179,16 @@ export default function NewTripScreen() {
       );
       return;
     }
-    const animal: Animal = { id: generateId(), name, emoji: newAnimalEmoji, points, isDefault: false };
+    const animal: Animal = { id: generateId(), name, emoji: noEmojiMode ? "" : newAnimalEmoji, points, isDefault: false };
     setTripAnimals((prev) => [...prev, animal]);
     setNewAnimalName("");
     setNewAnimalEmoji(ANIMAL_EMOJI_OPTIONS[0]);
-    setNewAnimalPoints("");
+    setNewAnimalPoints("1");
     setShowAddAnimal(false);
     setNewPointsError("");
     setAnimalNameWarning("");
-  }, [newAnimalName, newAnimalEmoji, newAnimalPoints]);
+    setNoEmojiMode(false);
+  }, [newAnimalName, newAnimalEmoji, newAnimalPoints, noEmojiMode]);
 
   const handleRemoveAnimal = useCallback((animalId: string) => {
     setTripAnimals((prev) => prev.filter((a) => a.id !== animalId));
@@ -400,7 +402,13 @@ export default function NewTripScreen() {
                 </View>
               ) : (
                 <View style={styles.animalRow}>
-                  <Text style={styles.animalEmoji}>{animal.emoji}</Text>
+                  {animal.emoji ? (
+                    <Text style={styles.animalEmoji}>{animal.emoji}</Text>
+                  ) : (
+                    <View style={styles.noEmojiIcon}>
+                      <Text style={styles.noEmojiIconText}>{animal.name.charAt(0).toUpperCase()}</Text>
+                    </View>
+                  )}
                   <Text style={styles.animalName}>{animal.name}</Text>
                   <View style={styles.pointsPill}>
                     <Text style={styles.pointsPillText}>{animal.points} pts</Text>
@@ -418,14 +426,30 @@ export default function NewTripScreen() {
 
           {showAddAnimal ? (
             <View style={styles.addAnimalForm}>
-              <Text style={styles.emojiLabel}>Pick an emoji:</Text>
-              <View style={styles.emojiGrid}>
-                {allEmojiOptions.map((emoji) => (
-                  <Pressable key={emoji} style={[styles.emojiOption, newAnimalEmoji === emoji && styles.emojiSelected]} onPress={() => setNewAnimalEmoji(emoji)}>
-                    <Text style={styles.emojiOptionText}>{emoji}</Text>
+              {!noEmojiMode ? (
+                <>
+                  <View style={styles.emojiLabelRow}>
+                    <Text style={styles.emojiLabel}>Pick an emoji:</Text>
+                    <Pressable onPress={() => { setNoEmojiMode(true); setNewAnimalName(""); }} hitSlop={8}>
+                      <Text style={styles.noEmojiLink}>No emoji</Text>
+                    </Pressable>
+                  </View>
+                  <View style={styles.emojiGrid}>
+                    {allEmojiOptions.map((emoji) => (
+                      <Pressable key={emoji} style={[styles.emojiOption, newAnimalEmoji === emoji && styles.emojiSelected]} onPress={() => { setNewAnimalEmoji(emoji); const suggestedName = getNameForEmoji(emoji); if (!newAnimalName.trim() || getNameForEmoji(newAnimalEmoji) === newAnimalName.trim()) { setNewAnimalName(suggestedName); } }}>
+                        <Text style={styles.emojiOptionText}>{emoji}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </>
+              ) : (
+                <View style={styles.noEmojiHeader}>
+                  <Text style={styles.emojiLabel}>Custom animal (no emoji)</Text>
+                  <Pressable onPress={() => { setNoEmojiMode(false); const suggestedName = getNameForEmoji(newAnimalEmoji); if (!newAnimalName.trim()) { setNewAnimalName(suggestedName); } }} hitSlop={8}>
+                    <Text style={styles.noEmojiLink}>Use emoji</Text>
                   </Pressable>
-                ))}
-              </View>
+                </View>
+              )}
               <View style={styles.animalFormRow}>
                 <TextInput style={[styles.formInput, styles.flexInput]} placeholder="Animal name" placeholderTextColor={Colors.textLight} value={newAnimalName} onChangeText={(t) => { setNewAnimalName(t); setAnimalNameWarning(checkDuplicateAnimalName(t)); }} returnKeyType="done" blurOnSubmit maxLength={20} inputAccessoryViewID={KEYBOARD_ACCESSORY_ID} />
                 <TextInput style={[styles.formInput, styles.pointsInput]} placeholder="Pts" placeholderTextColor={Colors.textLight} value={newAnimalPoints} onChangeText={(t) => { setNewAnimalPoints(t); validatePoints(t, setNewPointsError); }} keyboardType="number-pad" inputAccessoryViewID={KEYBOARD_ACCESSORY_ID} />
@@ -433,7 +457,7 @@ export default function NewTripScreen() {
               {animalNameWarning ? <Text style={styles.warningText}>{animalNameWarning}</Text> : null}
               {newPointsError ? <Text style={styles.errorText}>{newPointsError}</Text> : null}
               <View style={styles.editActions}>
-                <Pressable style={({ pressed }) => [styles.editActionBtn, styles.cancelBtn, pressed && styles.cancelBtnPressed]} onPress={() => { setShowAddAnimal(false); setNewPointsError(""); setAnimalNameWarning(""); }}>
+                <Pressable style={({ pressed }) => [styles.editActionBtn, styles.cancelBtn, pressed && styles.cancelBtnPressed]} onPress={() => { setShowAddAnimal(false); setNewPointsError(""); setAnimalNameWarning(""); setNoEmojiMode(false); }}>
                   <X size={16} color={Colors.brownMuted} />
                   <Text style={styles.cancelBtnText}>Cancel</Text>
                 </Pressable>
@@ -529,7 +553,12 @@ const styles = StyleSheet.create({
   addAnimalBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, backgroundColor: "#EDF5F0", paddingVertical: 14, borderRadius: 14, marginTop: 4, marginBottom: 8 },
   addAnimalBtnText: { color: Colors.primary, fontSize: 15, fontWeight: "600" as const },
   addAnimalForm: { backgroundColor: Colors.white, borderRadius: 16, padding: 16, marginTop: 4, marginBottom: 8, borderWidth: 1, borderColor: Colors.border },
-  emojiLabel: { fontSize: 14, fontWeight: "600" as const, color: Colors.brownMuted, marginBottom: 8 },
+  emojiLabelRow: { flexDirection: "row" as const, alignItems: "center" as const, justifyContent: "space-between" as const, marginBottom: 8 },
+  noEmojiLink: { fontSize: 13, fontWeight: "600" as const, color: Colors.primaryLight, textDecorationLine: "underline" as const },
+  noEmojiHeader: { flexDirection: "row" as const, alignItems: "center" as const, justifyContent: "space-between" as const, marginBottom: 12 },
+  noEmojiIcon: { width: 28, height: 28, borderRadius: 8, backgroundColor: Colors.primaryLight, alignItems: "center" as const, justifyContent: "center" as const },
+  noEmojiIconText: { fontSize: 14, fontWeight: "700" as const, color: Colors.white },
+  emojiLabel: { fontSize: 14, fontWeight: "600" as const, color: Colors.brownMuted },
   emojiGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 14 },
   emojiOption: { width: 40, height: 40, borderRadius: 10, backgroundColor: Colors.cream, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: "transparent" },
   emojiSelected: { borderColor: Colors.primary, backgroundColor: "#EDF5F0" },

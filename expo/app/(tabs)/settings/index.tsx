@@ -13,7 +13,7 @@ import {
 } from "react-native";
 
 import Colors from "@/constants/colors";
-import { AVATAR_OPTIONS, ANIMAL_EMOJI_OPTIONS } from "@/constants/animals";
+import { AVATAR_OPTIONS, ANIMAL_EMOJI_OPTIONS, getNameForEmoji } from "@/constants/animals";
 import { FREE_PLAYER_LIMIT, FREE_CUSTOM_ANIMAL_LIMIT } from "@/constants/limits";
 import { useGame } from "@/providers/GameProvider";
 import { usePurchases } from "@/providers/PurchaseProvider";
@@ -39,8 +39,9 @@ export default function SettingsScreen() {
   const [showAddPlayer, setShowAddPlayer] = useState<boolean>(false);
   const [newAnimalName, setNewAnimalName] = useState<string>("");
   const [newAnimalEmoji, setNewAnimalEmoji] = useState<string>(ANIMAL_EMOJI_OPTIONS[0]);
-  const [newAnimalPoints, setNewAnimalPoints] = useState<string>("");
+  const [newAnimalPoints, setNewAnimalPoints] = useState<string>("1");
   const [showAddAnimal, setShowAddAnimal] = useState<boolean>(false);
+  const [noEmojiMode, setNoEmojiMode] = useState<boolean>(false);
 
   const [editingAnimalId, setEditingAnimalId] = useState<string | null>(null);
   const [editName, setEditName] = useState<string>("");
@@ -143,10 +144,10 @@ export default function SettingsScreen() {
     const name = newAnimalName.trim();
     const emoji = newAnimalEmoji.trim();
     const points = parseInt(newAnimalPoints, 10);
-    if (!name || !emoji) {
+    if (!name || (!noEmojiMode && !emoji)) {
       Alert.alert(
         "Missing Info",
-        "Please enter a name and emoji for the animal."
+        "Please enter a name for the animal."
       );
       return;
     }
@@ -169,14 +170,15 @@ export default function SettingsScreen() {
       );
       return;
     }
-    addAnimal(name, emoji, points);
+    addAnimal(name, noEmojiMode ? "" : emoji, points);
     setNewAnimalName("");
     setNewAnimalEmoji(ANIMAL_EMOJI_OPTIONS[0]);
-    setNewAnimalPoints("");
+    setNewAnimalPoints("1");
     setShowAddAnimal(false);
     setNewPointsError("");
     setAnimalNameWarning("");
-  }, [newAnimalName, newAnimalEmoji, newAnimalPoints, addAnimal]);
+    setNoEmojiMode(false);
+  }, [newAnimalName, newAnimalEmoji, newAnimalPoints, noEmojiMode, addAnimal]);
 
   const handleRemoveAnimal = useCallback(
     (animalId: string, animalName: string) => {
@@ -357,21 +359,37 @@ export default function SettingsScreen() {
         </View>
         {showAddAnimal && (
           <View style={styles.addForm}>
-            <Text style={styles.avatarLabel}>Pick an emoji:</Text>
-            <View style={styles.emojiGrid}>
-              {allEmojiOptions.map((emoji) => (
-                <Pressable
-                  key={emoji}
-                  style={[
-                    styles.emojiOption,
-                    newAnimalEmoji === emoji && styles.emojiSelected,
-                  ]}
-                  onPress={() => setNewAnimalEmoji(emoji)}
-                >
-                  <Text style={styles.emojiOptionText}>{emoji}</Text>
+            {!noEmojiMode ? (
+              <>
+                <View style={styles.emojiLabelRow}>
+                  <Text style={styles.avatarLabel}>Pick an emoji:</Text>
+                  <Pressable onPress={() => { setNoEmojiMode(true); setNewAnimalName(""); }} hitSlop={8}>
+                    <Text style={styles.noEmojiLink}>No emoji</Text>
+                  </Pressable>
+                </View>
+                <View style={styles.emojiGrid}>
+                  {allEmojiOptions.map((emoji) => (
+                    <Pressable
+                      key={emoji}
+                      style={[
+                        styles.emojiOption,
+                        newAnimalEmoji === emoji && styles.emojiSelected,
+                      ]}
+                      onPress={() => { setNewAnimalEmoji(emoji); const suggested = getNameForEmoji(emoji); if (!newAnimalName.trim() || getNameForEmoji(newAnimalEmoji) === newAnimalName.trim()) { setNewAnimalName(suggested); } }}
+                    >
+                      <Text style={styles.emojiOptionText}>{emoji}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </>
+            ) : (
+              <View style={styles.noEmojiHeader}>
+                <Text style={styles.avatarLabel}>Custom animal (no emoji)</Text>
+                <Pressable onPress={() => { setNoEmojiMode(false); const suggested = getNameForEmoji(newAnimalEmoji); if (!newAnimalName.trim()) { setNewAnimalName(suggested); } }} hitSlop={8}>
+                  <Text style={styles.noEmojiLink}>Use emoji</Text>
                 </Pressable>
-              ))}
-            </View>
+              </View>
+            )}
             <View style={styles.animalFormRow}>
               <TextInput
                 style={[styles.input, styles.flexInput]}
@@ -477,7 +495,13 @@ export default function SettingsScreen() {
               </View>
             ) : (
               <View style={styles.listItem}>
-                <Text style={styles.listEmoji}>{animal.emoji}</Text>
+                {animal.emoji ? (
+                  <Text style={styles.listEmoji}>{animal.emoji}</Text>
+                ) : (
+                  <View style={styles.noEmojiIcon}>
+                    <Text style={styles.noEmojiIconText}>{animal.name.charAt(0).toUpperCase()}</Text>
+                  </View>
+                )}
                 <Text style={styles.listName}>{animal.name}</Text>
                 <View style={styles.pointsPill}>
                   <Text style={styles.pointsPillText}>{animal.points} pts</Text>
@@ -638,7 +662,37 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600" as const,
     color: Colors.brownMuted,
+  },
+  emojiLabelRow: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "space-between" as const,
     marginBottom: 8,
+  },
+  noEmojiLink: {
+    fontSize: 13,
+    fontWeight: "600" as const,
+    color: Colors.primaryLight,
+    textDecorationLine: "underline" as const,
+  },
+  noEmojiHeader: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "space-between" as const,
+    marginBottom: 12,
+  },
+  noEmojiIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 9,
+    backgroundColor: Colors.primaryLight,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+  },
+  noEmojiIconText: {
+    fontSize: 15,
+    fontWeight: "700" as const,
+    color: Colors.white,
   },
   avatarGrid: {
     flexDirection: "row",

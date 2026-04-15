@@ -86,7 +86,13 @@ export default function StatsScreen() {
                   if (!animal) return null;
                   return (
                     <View key={animalId} style={styles.animalRow}>
-                      <Text style={styles.animalEmoji}>{animal.emoji}</Text>
+                      {animal.emoji ? (
+                        <Text style={styles.animalEmoji}>{animal.emoji}</Text>
+                      ) : (
+                        <View style={styles.noEmojiBadge}>
+                          <Text style={styles.noEmojiBadgeText}>{animal.name.charAt(0).toUpperCase()}</Text>
+                        </View>
+                      )}
                       <Text style={styles.animalName}>{animal.name}</Text>
                       <View style={styles.countBadge}>
                         <Target size={12} color={Colors.brownMuted} />
@@ -213,6 +219,8 @@ const styles = StyleSheet.create({
   animalList: { gap: 8 },
   animalRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   animalEmoji: { fontSize: 20, width: 28, textAlign: "center" },
+  noEmojiBadge: { width: 28, height: 28, borderRadius: 8, backgroundColor: Colors.primaryLight, alignItems: "center" as const, justifyContent: "center" as const },
+  noEmojiBadgeText: { fontSize: 14, fontWeight: "700" as const, color: Colors.white },
   animalName: { flex: 1, fontSize: 15, color: Colors.brown },
   countBadge: {
     flexDirection: "row",

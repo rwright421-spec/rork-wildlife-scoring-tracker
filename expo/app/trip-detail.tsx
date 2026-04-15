@@ -135,7 +135,13 @@ export default function TripDetailScreen() {
                 if (count === 0) return null;
                 return (
                   <View key={animal.id} style={styles.sightingRow}>
-                    <Text style={styles.sightingEmoji}>{animal.emoji}</Text>
+                    {animal.emoji ? (
+                      <Text style={styles.sightingEmoji}>{animal.emoji}</Text>
+                    ) : (
+                      <View style={styles.noEmojiBadge}>
+                        <Text style={styles.noEmojiBadgeText}>{animal.name.charAt(0).toUpperCase()}</Text>
+                      </View>
+                    )}
                     <Text style={styles.sightingName}>{animal.name}</Text>
                     <Text style={styles.sightingCount}>×{count}</Text>
                     <Text style={styles.sightingPoints}>{count * animal.points} pts</Text>
@@ -190,4 +196,6 @@ const styles = StyleSheet.create({
   sightingCount: { fontSize: 15, color: Colors.brownMuted, fontWeight: "600" as const },
   sightingPoints: { fontSize: 15, color: Colors.primary, fontWeight: "700" as const, minWidth: 50, textAlign: "right" },
   noSightings: { fontSize: 14, color: Colors.textLight, fontStyle: "italic" as const },
+  noEmojiBadge: { width: 28, height: 28, borderRadius: 8, backgroundColor: Colors.primaryLight, alignItems: "center" as const, justifyContent: "center" as const },
+  noEmojiBadgeText: { fontSize: 14, fontWeight: "700" as const, color: Colors.white },
 });

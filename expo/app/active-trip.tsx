@@ -5,7 +5,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Alert, Animated, FlatList, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { ANIMAL_EMOJI_OPTIONS, AVATAR_OPTIONS } from "@/constants/animals";
+import { ANIMAL_EMOJI_OPTIONS, AVATAR_OPTIONS, getNameForEmoji } from "@/constants/animals";
 import { FREE_PLAYER_LIMIT, FREE_CUSTOM_ANIMAL_LIMIT } from "@/constants/limits";
 import { Animal, Player } from "@/types";
 
@@ -289,13 +289,16 @@ export default function ActiveTripScreen() {
     setShowEmojiPicker(false);
   }, []);
 
+  const [noEmojiMode, setNoEmojiMode] = useState<boolean>(false);
+
   const startAddAnimal = useCallback(() => {
     setEditingAnimal(null);
     setEditName("");
     setEditEmoji("🐰");
-    setEditPoints("5");
+    setEditPoints("1");
     setIsAddingNew(true);
     setShowEmojiPicker(false);
+    setNoEmojiMode(false);
   }, []);
 
   const cancelEdit = useCallback(() => {
@@ -326,7 +329,8 @@ export default function ActiveTripScreen() {
     }
     if (Platform.OS !== "web") { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }
     if (isAddingNew) {
-      addTripAnimal(currentTrip.id, name, editEmoji, pts);
+      addTripAnimal(currentTrip.id, name, noEmojiMode ? "" : editEmoji, pts);
+      setNoEmojiMode(false);
     } else if (editingAnimal) {
       updateTripAnimal(currentTrip.id, editingAnimal.id, name, editEmoji, pts);
     }
@@ -335,7 +339,7 @@ export default function ActiveTripScreen() {
     setShowEmojiPicker(false);
     setPointsError("");
     setAnimalNameWarning("");
-  }, [currentTrip, editName, editEmoji, editPoints, editingAnimal, isAddingNew, addTripAnimal, updateTripAnimal]);
+  }, [currentTrip, editName, editEmoji, editPoints, editingAnimal, isAddingNew, noEmojiMode, addTripAnimal, updateTripAnimal]);
 
   const handleRemovePlayerFromTrip = useCallback((playerId: string, playerName: string, totalPoints: number) => {
     if (!currentTrip) return;
@@ -449,7 +453,11 @@ export default function ActiveTripScreen() {
                         <Text style={styles.animalCount}>{count}</Text>
                       </View>
                       <Pressable style={({ pressed }) => [styles.animalButton, pressed && styles.animalButtonPressed]} onPress={() => handleSighting(tp.playerId, animal.id)}>
-                        <Text style={styles.animalEmoji}>{animal.emoji}</Text>
+                        {animal.emoji ? (
+                          <Text style={styles.animalEmoji}>{animal.emoji}</Text>
+                        ) : (
+                          <Text style={styles.animalInitial}>{animal.name.charAt(0).toUpperCase()}</Text>
+                        )}
                         <Text style={styles.animalPts}>+{animal.points}</Text>
                       </Pressable>
                       <Text style={styles.animalName}>{animal.name}</Text>
@@ -552,14 +560,32 @@ export default function ActiveTripScreen() {
             ) : (editingAnimal || isAddingNew) ? (
               <View style={styles.editForm}>
                 <Text style={styles.editFormTitle}>{isAddingNew ? "Add New Animal" : "Edit " + editingAnimal?.name}</Text>
-                <Pressable onPress={() => setShowEmojiPicker(!showEmojiPicker)} style={styles.emojiSelector}>
-                  <Text style={styles.emojiSelectorValue}>{editEmoji}</Text>
-                  <Text style={styles.emojiSelectorLabel}>Tap to change</Text>
-                </Pressable>
+                {isAddingNew && !noEmojiMode ? (
+                  <>
+                    <Pressable onPress={() => setShowEmojiPicker(!showEmojiPicker)} style={styles.emojiSelector}>
+                      <Text style={styles.emojiSelectorValue}>{editEmoji}</Text>
+                      <Text style={styles.emojiSelectorLabel}>Tap to change</Text>
+                    </Pressable>
+                    <Pressable onPress={() => { setNoEmojiMode(true); setEditName(""); }} style={styles.noEmojiToggle}>
+                      <Text style={styles.noEmojiToggleText}>No emoji</Text>
+                    </Pressable>
+                  </>
+                ) : isAddingNew && noEmojiMode ? (
+                  <Pressable onPress={() => { setNoEmojiMode(false); const suggested = getNameForEmoji(editEmoji); if (!editName.trim()) setEditName(suggested); }} style={styles.noEmojiToggle}>
+                    <Text style={styles.noEmojiToggleText}>Use emoji</Text>
+                  </Pressable>
+                ) : (
+                  <>
+                    <Pressable onPress={() => setShowEmojiPicker(!showEmojiPicker)} style={styles.emojiSelector}>
+                      <Text style={styles.emojiSelectorValue}>{editEmoji}</Text>
+                      <Text style={styles.emojiSelectorLabel}>Tap to change</Text>
+                    </Pressable>
+                  </>
+                )}
                 {showEmojiPicker && (
                   <View style={styles.emojiGrid}>
                     {ANIMAL_EMOJI_OPTIONS.map((emoji) => (
-                      <Pressable key={emoji} style={[styles.emojiOption, editEmoji === emoji && styles.emojiOptionSelected]} onPress={() => { setEditEmoji(emoji); setShowEmojiPicker(false); }}>
+                      <Pressable key={emoji} style={[styles.emojiOption, editEmoji === emoji && styles.emojiOptionSelected]} onPress={() => { setEditEmoji(emoji); setShowEmojiPicker(false); if (isAddingNew) { const suggested = getNameForEmoji(emoji); if (!editName.trim() || getNameForEmoji(editEmoji) === editName.trim()) { setEditName(suggested); } } }}>
                         <Text style={styles.emojiOptionText}>{emoji}</Text>
                       </Pressable>
                     ))}
@@ -588,7 +614,13 @@ export default function ActiveTripScreen() {
                   const totalSightings = currentTrip ? currentTrip.players.reduce((sum, tp) => sum + (tp.sightings[animal.id] || 0), 0) : 0;
                   return (
                     <Pressable key={animal.id} style={styles.animalListItem} onPress={() => startEditAnimal(animal)}>
-                      <Text style={styles.animalListEmoji}>{animal.emoji}</Text>
+                      {animal.emoji ? (
+                        <Text style={styles.animalListEmoji}>{animal.emoji}</Text>
+                      ) : (
+                        <View style={styles.noEmojiListIcon}>
+                          <Text style={styles.noEmojiListIconText}>{animal.name.charAt(0).toUpperCase()}</Text>
+                        </View>
+                      )}
                       <View style={styles.animalListInfo}>
                         <Text style={styles.animalListName}>{animal.name}</Text>
                         <Text style={styles.animalListMeta}>{animal.points} pts{totalSightings > 0 ? " · " + totalSightings + " sighting" + (totalSightings !== 1 ? "s" : "") : ""}</Text>
@@ -690,7 +722,7 @@ export default function ActiveTripScreen() {
         <Animated.View style={[styles.snackbar, { opacity: snackbarOpacity, bottom: insets.bottom + 16 }]}>
           <View style={styles.snackbarContent}>
             <Text style={styles.snackbarText}>
-              {lastAction.animalEmoji} {lastAction.playerName} +{lastAction.animalPoints}
+              {lastAction.animalEmoji ? lastAction.animalEmoji + " " : ""}{lastAction.playerName} +{lastAction.animalPoints}
             </Text>
             <Pressable
               onPress={handleUndoLast}
@@ -778,6 +810,11 @@ const styles = StyleSheet.create({
   emojiSelector: { alignSelf: "center", alignItems: "center", backgroundColor: Colors.white, width: 80, height: 80, borderRadius: 20, justifyContent: "center", borderWidth: 2, borderColor: Colors.accent },
   emojiSelectorValue: { fontSize: 36 },
   emojiSelectorLabel: { fontSize: 10, color: Colors.brownMuted, marginTop: 2 },
+  noEmojiToggle: { alignSelf: "center" as const, marginTop: -8 },
+  noEmojiToggleText: { fontSize: 13, fontWeight: "600" as const, color: Colors.primaryLight, textDecorationLine: "underline" as const },
+  noEmojiListIcon: { width: 32, height: 32, borderRadius: 10, backgroundColor: Colors.primaryLight, alignItems: "center" as const, justifyContent: "center" as const },
+  noEmojiListIconText: { fontSize: 16, fontWeight: "700" as const, color: Colors.white },
+  animalInitial: { fontSize: 16, fontWeight: "700" as const, color: Colors.primaryLight },
   emojiGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8, justifyContent: "center", backgroundColor: Colors.white, padding: 12, borderRadius: 14, borderWidth: 1, borderColor: Colors.border },
   emojiOption: { width: 44, height: 44, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: Colors.cream },
   emojiOptionSelected: { backgroundColor: Colors.accentLight, borderWidth: 2, borderColor: Colors.accent },
