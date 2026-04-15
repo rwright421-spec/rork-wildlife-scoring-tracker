@@ -162,7 +162,7 @@ export default function SettingsScreen() {
     if (!isPremium && customAnimalCount >= FREE_CUSTOM_ANIMAL_LIMIT) {
       Alert.alert(
         "Custom Animal Limit",
-        "Free accounts cannot add custom animals. Upgrade to Pro for unlimited custom animals!",
+        "Free accounts cannot add more than 4 animals. Upgrade to Pro for unlimited custom animals!",
         [
           { text: "Not Now", style: "cancel" },
           { text: "Upgrade", onPress: () => router.push("/paywall") },
