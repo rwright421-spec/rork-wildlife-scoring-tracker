@@ -340,7 +340,11 @@ export const [GameProvider, useGame] = createContextHook(() => {
 
   const completeOnboarding = useCallback(async () => {
     setHasCompletedOnboarding(true);
-    await AsyncStorage.setItem(ONBOARDING_KEY, "true");
+    try {
+      await AsyncStorage.setItem(ONBOARDING_KEY, "true");
+    } catch (error) {
+      console.error('[GameProvider] Failed to save onboarding status:', error);
+    }
   }, []);
 
   const getTripAnimals = useCallback(
