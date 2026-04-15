@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { DEFAULT_ANIMALS } from "@/constants/animals";
+import { GameStateSchema } from "@/providers/gameStateSchema";
 import { Animal, GameState, Player, PlayerSightings, Trip, TripPlayer } from "@/types";
 
 const STORAGE_KEY = "wildlife_spotter_data";
@@ -32,13 +33,17 @@ export const [GameProvider, useGame] = createContextHook(() => {
         const onboardingDone = await AsyncStorage.getItem(ONBOARDING_KEY);
         if (stored) {
           try {
-            const parsed = JSON.parse(stored) as GameState;
-            if (!parsed.animals || parsed.animals.length === 0) {
-              parsed.animals = [...DEFAULT_ANIMALS];
+            const raw = JSON.parse(stored);
+            const result = GameStateSchema.safeParse(raw);
+            if (result.success) {
+              const parsed = result.data as GameState;
+              if (!parsed.animals || parsed.animals.length === 0) {
+                parsed.animals = [...DEFAULT_ANIMALS];
+              }
+              return { state: parsed, onboardingDone: onboardingDone === "true" || parsed.players.length > 0 };
             }
-            if (!Array.isArray(parsed.players)) parsed.players = [];
-            if (!Array.isArray(parsed.trips)) parsed.trips = [];
-            return { state: parsed, onboardingDone: onboardingDone === "true" || parsed.players.length > 0 };
+            console.warn('[GameProvider] Game state failed validation, resetting to defaults', result.error.issues);
+            return { state: defaultState, onboardingDone: onboardingDone === "true" };
           } catch (parseError) {
             if (__DEV__) console.error('[GameProvider] Failed to parse stored data, resetting to defaults:', parseError);
             return { state: defaultState, onboardingDone: onboardingDone === "true" };
