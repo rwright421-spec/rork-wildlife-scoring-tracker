@@ -1,8 +1,8 @@
 import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { MapPin, Trash2, Trophy } from "lucide-react-native";
-import React, { useCallback, useRef } from "react";
-import { Alert, Animated, PanResponder, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import React, { useCallback, useMemo, useRef } from "react";
+import { Alert, Animated, FlatList, PanResponder, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
 import Colors from "@/constants/colors";
 import { useGame } from "@/providers/GameProvider";
@@ -130,57 +130,75 @@ export default function HistoryScreen() {
     );
   }
 
-  return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.swipeHint}>Swipe left or long press to delete</Text>
-      {completedTrips.map((trip) => {
-        const winner = trip.winnerId ? getPlayer(trip.winnerId) : null;
-        const sortedPlayers = [...trip.players].sort(
-          (a, b) => b.totalPoints - a.totalPoints
-        );
-        const totalPoints = trip.players.reduce(
-          (sum, p) => sum + p.totalPoints,
-          0
-        );
-        return (
-          <SwipeableTripCard key={trip.id} trip={trip} onDelete={handleDeleteTrip}>
-            <View style={styles.cardHeader}>
-              <View style={styles.tripInfo}>
-                <MapPin size={18} color={Colors.primary} />
-                <Text style={styles.tripName}>{trip.name}</Text>
-              </View>
-              <Text style={styles.totalPoints}>{totalPoints} pts</Text>
-            </View>
-            <Text style={styles.tripDate}>
-              {new Date(trip.startDate).toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-              })}
+  const sortedTrips = useMemo(() => {
+    return completedTrips.map((trip) => {
+      const sortedPlayers = [...trip.players].sort(
+        (a, b) => b.totalPoints - a.totalPoints
+      );
+      const totalPoints = trip.players.reduce(
+        (sum, p) => sum + p.totalPoints,
+        0
+      );
+      return { trip, sortedPlayers, totalPoints };
+    });
+  }, [completedTrips]);
+
+  const renderTripCard = useCallback(({ item }: { item: typeof sortedTrips[number] }) => {
+    const { trip, sortedPlayers, totalPoints } = item;
+    const winner = trip.winnerId ? getPlayer(trip.winnerId) : null;
+    return (
+      <SwipeableTripCard trip={trip} onDelete={handleDeleteTrip}>
+        <View style={styles.cardHeader}>
+          <View style={styles.tripInfo}>
+            <MapPin size={18} color={Colors.primary} />
+            <Text style={styles.tripName}>{trip.name}</Text>
+          </View>
+          <Text style={styles.totalPoints}>{totalPoints} pts</Text>
+        </View>
+        <Text style={styles.tripDate}>
+          {new Date(trip.startDate).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          })}
+        </Text>
+        {winner && (
+          <View style={styles.winnerRow} accessibilityLabel={`Winner: ${winner.name}`}>
+            <Trophy size={14} color={Colors.gold} />
+            <Text style={styles.winnerName}>
+              {winner.name}
             </Text>
-            {winner && (
-              <View style={styles.winnerRow} accessibilityLabel={`Winner: ${winner.name}`}>
-                <Trophy size={14} color={Colors.gold} />
-                <Text style={styles.winnerName}>
-                  {winner.name}
-                </Text>
+          </View>
+        )}
+        <View style={styles.playersRow}>
+          {sortedPlayers.map((tp) => {
+            const player = getPlayer(tp.playerId);
+            return (
+              <View key={tp.playerId} style={styles.playerChip} accessibilityLabel={`${player?.name ?? "Unknown"}, ${tp.totalPoints} points`}>
+                <PlayerAvatar avatar={player?.avatar ?? "?"} size={20} fontSize={14} />
+                <Text style={styles.chipPoints}>{tp.totalPoints}</Text>
               </View>
-            )}
-            <View style={styles.playersRow}>
-              {sortedPlayers.map((tp) => {
-                const player = getPlayer(tp.playerId);
-                return (
-                  <View key={tp.playerId} style={styles.playerChip} accessibilityLabel={`${player?.name ?? "Unknown"}, ${tp.totalPoints} points`}>
-                    <PlayerAvatar avatar={player?.avatar ?? "?"} size={20} fontSize={14} />
-                    <Text style={styles.chipPoints}>{tp.totalPoints}</Text>
-                  </View>
-                );
-              })}
-            </View>
-          </SwipeableTripCard>
-        );
-      })}
-    </ScrollView>
+            );
+          })}
+        </View>
+      </SwipeableTripCard>
+    );
+  }, [getPlayer, handleDeleteTrip]);
+
+  const keyExtractor = useCallback((item: typeof sortedTrips[number]) => item.trip.id, []);
+
+  return (
+    <FlatList
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      data={sortedTrips}
+      renderItem={renderTripCard}
+      keyExtractor={keyExtractor}
+      ListHeaderComponent={<Text style={styles.swipeHint}>Swipe left or long press to delete</Text>}
+      initialNumToRender={10}
+      maxToRenderPerBatch={10}
+      windowSize={5}
+    />
   );
 }
 

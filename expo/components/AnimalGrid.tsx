@@ -1,9 +1,62 @@
-import React from "react";
+import React, { useCallback } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Minus } from "lucide-react-native";
 
 import { Animal, PlayerSightings } from "@/types";
 import Colors from "@/constants/colors";
+
+interface AnimalButtonProps {
+  animal: Animal;
+  count: number;
+  playerId: string;
+  onSighting: (playerId: string, animalId: string) => void;
+  onUndo: (playerId: string, animalId: string) => void;
+}
+
+const AnimalButton = React.memo(function AnimalButton({ animal, count, playerId, onSighting, onUndo }: AnimalButtonProps) {
+  const handleSighting = useCallback(() => onSighting(playerId, animal.id), [playerId, animal.id, onSighting]);
+  const handleUndo = useCallback(() => onUndo(playerId, animal.id), [playerId, animal.id, onUndo]);
+
+  return (
+    <View style={styles.animalItem}>
+      <View style={styles.animalCountRow}>
+        <Pressable
+          style={({ pressed }) => [
+            styles.undoBtn,
+            pressed && styles.undoBtnPressed,
+            count === 0 && styles.undoBtnDisabled,
+          ]}
+          onPress={handleUndo}
+          disabled={count === 0}
+          accessibilityRole="button"
+          accessibilityLabel={`Undo ${animal.name} sighting`}
+          accessibilityState={{ disabled: count === 0 }}
+        >
+          <Minus size={12} color={count > 0 ? Colors.brownMuted : Colors.textLight} />
+        </Pressable>
+        <Text style={styles.animalCount}>{count}</Text>
+      </View>
+      <Pressable
+        style={({ pressed }) => [
+          styles.animalButton,
+          pressed && styles.animalButtonPressed,
+        ]}
+        onPress={handleSighting}
+        accessibilityRole="button"
+        accessibilityLabel={`${animal.name} — ${animal.points} point${animal.points !== 1 ? "s" : ""}`}
+        accessibilityHint={`Log ${animal.name} sighting`}
+      >
+        {animal.emoji ? (
+          <Text style={styles.animalEmoji}>{animal.emoji}</Text>
+        ) : (
+          <Text style={styles.animalInitial}>{animal.name.charAt(0).toUpperCase()}</Text>
+        )}
+        <Text style={styles.animalPts}>+{animal.points}</Text>
+      </Pressable>
+      <Text style={styles.animalName}>{animal.name}</Text>
+    </View>
+  );
+});
 
 interface AnimalGridProps {
   animals: Animal[];
@@ -16,48 +69,16 @@ interface AnimalGridProps {
 function AnimalGrid({ animals, sightings, playerId, onSighting, onUndo }: AnimalGridProps) {
   return (
     <View style={styles.animalGrid}>
-      {animals.map((animal) => {
-        const count = sightings[animal.id] || 0;
-        return (
-          <View key={animal.id} style={styles.animalItem}>
-            <View style={styles.animalCountRow}>
-              <Pressable
-                style={({ pressed }) => [
-                  styles.undoBtn,
-                  pressed && styles.undoBtnPressed,
-                  count === 0 && styles.undoBtnDisabled,
-                ]}
-                onPress={() => onUndo(playerId, animal.id)}
-                disabled={count === 0}
-                accessibilityRole="button"
-                accessibilityLabel={`Undo ${animal.name} sighting`}
-                accessibilityState={{ disabled: count === 0 }}
-              >
-                <Minus size={12} color={count > 0 ? Colors.brownMuted : Colors.textLight} />
-              </Pressable>
-              <Text style={styles.animalCount}>{count}</Text>
-            </View>
-            <Pressable
-              style={({ pressed }) => [
-                styles.animalButton,
-                pressed && styles.animalButtonPressed,
-              ]}
-              onPress={() => onSighting(playerId, animal.id)}
-              accessibilityRole="button"
-              accessibilityLabel={`${animal.name} — ${animal.points} point${animal.points !== 1 ? "s" : ""}`}
-              accessibilityHint={`Log ${animal.name} sighting`}
-            >
-              {animal.emoji ? (
-                <Text style={styles.animalEmoji}>{animal.emoji}</Text>
-              ) : (
-                <Text style={styles.animalInitial}>{animal.name.charAt(0).toUpperCase()}</Text>
-              )}
-              <Text style={styles.animalPts}>+{animal.points}</Text>
-            </Pressable>
-            <Text style={styles.animalName}>{animal.name}</Text>
-          </View>
-        );
-      })}
+      {animals.map((animal) => (
+        <AnimalButton
+          key={animal.id}
+          animal={animal}
+          count={sightings[animal.id] || 0}
+          playerId={playerId}
+          onSighting={onSighting}
+          onUndo={onUndo}
+        />
+      ))}
     </View>
   );
 }
