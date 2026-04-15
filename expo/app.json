@@ -15,7 +15,7 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "app.rork.a5hxdzvddy3o0wnm3dzj1"
+      "bundleIdentifier": "app.rork.wildlife-scoring-tracker"
     },
     "android": {
       "adaptiveIcon": {
