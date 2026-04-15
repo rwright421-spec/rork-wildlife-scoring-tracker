@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
-import { Clock, MapPin, Play, Plus, Repeat, Trophy } from "lucide-react-native";
+import { Clock, MapPin, Play, Plus, Repeat, Trash2, Trophy } from "lucide-react-native";
 import React, { useCallback, useMemo } from "react";
 import {
   Alert,
@@ -32,7 +32,7 @@ function formatDuration(startDate: string): string {
 }
 
 export default function HomeScreen() {
-  const { activeTrips, completedTrips, players, getPlayer } = useGame();
+  const { activeTrips, completedTrips, players, getPlayer, deleteTrip } = useGame();
   const { isPremium } = usePurchases();
 
   const lastCompletedTrip = useMemo(() => completedTrips[0] ?? null, [completedTrips]);
@@ -89,6 +89,24 @@ export default function HomeScreen() {
     }
     router.push({ pathname: "/active-trip", params: { tripId } });
   }, []);
+
+  const handleDeleteRecentTrip = useCallback((tripId: string, tripName: string) => {
+    if (Platform.OS !== "web") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    Alert.alert(
+      "Delete Trip",
+      `Are you sure you want to delete "${tripName}"? This cannot be undone.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => deleteTrip(tripId),
+        },
+      ]
+    );
+  }, [deleteTrip]);
 
   const getLeader = useCallback((trip: Trip) => {
     const sorted = [...trip.players].sort((a, b) => b.totalPoints - a.totalPoints);
@@ -263,6 +281,20 @@ export default function HomeScreen() {
                 <View style={styles.recentTripHeader}>
                   <MapPin size={16} color={Colors.primary} />
                   <Text style={styles.recentTripName}>{trip.name}</Text>
+                  <Pressable
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      handleDeleteRecentTrip(trip.id, trip.name);
+                    }}
+                    hitSlop={8}
+                    style={({ pressed }) => [
+                      styles.deleteBtn,
+                      pressed && styles.deleteBtnPressed,
+                    ]}
+                    testID={`delete-recent-trip-${trip.id}`}
+                  >
+                    <Trash2 size={15} color={Colors.danger} />
+                  </Pressable>
                 </View>
                 <Text style={styles.recentTripDate}>
                   {new Date(trip.startDate).toLocaleDateString()}
@@ -583,6 +615,18 @@ const styles = StyleSheet.create({
     fontWeight: "700" as const,
     color: Colors.brown,
     flex: 1,
+  },
+  deleteBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: "#FEF2F2",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  deleteBtnPressed: {
+    backgroundColor: "#FECACA",
+    transform: [{ scale: 0.9 }],
   },
   recentTripDate: {
     fontSize: 13,
