@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from "expo-router";
 import * as Haptics from "expo-haptics";
-import { Check, ChevronLeft, ChevronRight, MapPin, Minus, Pencil, Plus, Trash2, X } from "lucide-react-native";
+import { Check, ChevronLeft, ChevronRight, Clock, MapPin, Minus, Pencil, Plus, Trash2, X } from "lucide-react-native";
 import React, { useCallback, useMemo, useState } from "react";
 import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
@@ -19,12 +19,19 @@ function generateId(): string {
 }
 
 export default function NewTripScreen() {
-  const { players, animals, startTrip, addPlayer } = useGame();
+  const { players, animals, trips, startTrip, addPlayer } = useGame();
   const { isPremium } = usePurchases();
   const params = useLocalSearchParams<{ repeatPlayerIds?: string; repeatAnimals?: string }>();
 
   const [step, setStep] = useState<number>(1);
   const [tripName, setTripName] = useState<string>("");
+  const [showLocationHistory, setShowLocationHistory] = useState<boolean>(true);
+
+  const pastLocations = useMemo(() => {
+    const names = trips.map((t) => t.name).filter(Boolean);
+    const unique = [...new Set(names)];
+    return unique.slice(0, 10);
+  }, [trips]);
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<string[]>(() => {
     if (params.repeatPlayerIds) {
       const ids = params.repeatPlayerIds.split(",").filter(Boolean);
@@ -242,8 +249,35 @@ export default function NewTripScreen() {
         <View style={styles.section}>
           <View style={styles.inputRow}>
             <MapPin size={20} color={Colors.brownMuted} />
-            <TextInput style={styles.input} placeholder="e.g. Yellowstone Weekend" placeholderTextColor={Colors.textLight} value={tripName} onChangeText={setTripName} autoFocus returnKeyType="done" blurOnSubmit maxLength={30} inputAccessoryViewID={KEYBOARD_ACCESSORY_ID} />
+            <TextInput style={styles.input} placeholder="e.g. Yellowstone Weekend" placeholderTextColor={Colors.textLight} value={tripName} onChangeText={(t) => { setTripName(t); setShowLocationHistory(false); }} autoFocus returnKeyType="done" blurOnSubmit maxLength={30} inputAccessoryViewID={KEYBOARD_ACCESSORY_ID} />
+            {tripName.length > 0 && (
+              <Pressable onPress={() => { setTripName(""); setShowLocationHistory(true); }} hitSlop={8}>
+                <X size={18} color={Colors.brownMuted} />
+              </Pressable>
+            )}
           </View>
+
+          {pastLocations.length > 0 && showLocationHistory && tripName.length === 0 && (
+            <View style={styles.locationHistorySection}>
+              <View style={styles.locationHistoryHeader}>
+                <Clock size={14} color={Colors.brownMuted} />
+                <Text style={styles.locationHistoryTitle}>Recent Locations</Text>
+              </View>
+              <View style={styles.locationChips}>
+                {pastLocations.map((loc) => (
+                  <Pressable
+                    key={loc}
+                    style={({ pressed }) => [styles.locationChip, pressed && styles.locationChipPressed]}
+                    onPress={() => { setTripName(loc); setShowLocationHistory(false); }}
+                  >
+                    <MapPin size={14} color={Colors.primaryLight} />
+                    <Text style={styles.locationChipText}>{loc}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          )}
+
           <Pressable style={({ pressed }) => [styles.nextButton, pressed && styles.nextButtonPressed, !canProceedStep1 && styles.buttonDisabled]} onPress={handleNextStep} disabled={!canProceedStep1}>
             <Text style={styles.nextButtonText}>Next</Text>
             <ChevronRight size={18} color={Colors.white} />
@@ -447,8 +481,15 @@ const styles = StyleSheet.create({
   stepLabel: { fontSize: 20, fontWeight: "700" as const, color: Colors.brown, textAlign: "center", marginBottom: 20 },
   section: { marginBottom: 28 },
   sublabel: { fontSize: 13, color: Colors.brownMuted, marginBottom: 14 },
-  inputRow: { flexDirection: "row", alignItems: "center", backgroundColor: Colors.white, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 4, borderWidth: 1, borderColor: Colors.border, gap: 10, marginBottom: 20 },
+  inputRow: { flexDirection: "row", alignItems: "center", backgroundColor: Colors.white, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 4, borderWidth: 1, borderColor: Colors.border, gap: 10, marginBottom: 16 },
   input: { flex: 1, fontSize: 16, color: Colors.brown, paddingVertical: 14 },
+  locationHistorySection: { marginBottom: 20 },
+  locationHistoryHeader: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 10 },
+  locationHistoryTitle: { fontSize: 13, fontWeight: "600" as const, color: Colors.brownMuted, textTransform: "uppercase" as const, letterSpacing: 0.5 },
+  locationChips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  locationChip: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: Colors.white, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12, borderWidth: 1, borderColor: Colors.border },
+  locationChipPressed: { backgroundColor: "#EDF5F0", borderColor: Colors.primaryLight },
+  locationChipText: { fontSize: 14, fontWeight: "500" as const, color: Colors.brown },
   playerList: { gap: 10, marginBottom: 14 },
   playerChip: { flexDirection: "row", alignItems: "center", backgroundColor: Colors.white, borderRadius: 14, padding: 16, borderWidth: 2, borderColor: Colors.border, gap: 12 },
   playerChipSelected: { borderColor: Colors.primary, backgroundColor: "#EDF5F0" },
