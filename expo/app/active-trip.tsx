@@ -1,6 +1,6 @@
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import * as Haptics from "expo-haptics";
-import { ArrowLeft, Minus, Square, Settings, Plus, Trash2, X, Check, UserPlus } from "lucide-react-native";
+import { Plus, Trash2, X, Check, UserPlus, Settings } from "lucide-react-native";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Animated, FlatList, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -16,6 +16,8 @@ import { KeyboardAccessory, KEYBOARD_ACCESSORY_ID } from "@/components/KeyboardD
 import AvatarPicker from "@/components/AvatarPicker";
 import EditPlayerModal from "@/components/EditPlayerModal";
 import PlayerAvatar from "@/components/PlayerAvatar";
+import TripHeader from "@/components/TripHeader";
+import PlayerList from "@/components/PlayerList";
 
 interface LastAction {
   playerId: string;
@@ -409,65 +411,22 @@ export default function ActiveTripScreen() {
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
-      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <Pressable onPress={() => router.back()} style={styles.headerBack}><ArrowLeft size={22} color={Colors.cream} /></Pressable>
-        <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle} numberOfLines={1}>{currentTrip.name}</Text>
-          <View style={styles.headerLive}><View style={styles.headerLiveDot} /><Text style={styles.headerLiveText}>LIVE</Text></View>
-        </View>
-        <View style={styles.headerActions}>
-          <Pressable onPress={openEditModal} style={styles.editAnimalsBtn} testID="edit-animals-btn">
-            <Settings size={18} color={Colors.cream} />
-          </Pressable>
-          <Pressable onPress={handleEndTrip} style={styles.endTripBtn}>
-            <Square size={16} color={Colors.dangerLight} fill={Colors.dangerLight} /><Text style={styles.endTripBtnText}>End</Text>
-          </Pressable>
-        </View>
-      </View>
+      <TripHeader
+        tripName={currentTrip.name}
+        paddingTop={insets.top + 8}
+        onBack={() => router.back()}
+        onSettings={openEditModal}
+        onEndTrip={handleEndTrip}
+      />
       <ScrollView style={styles.scrollView} contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 20 }]}>
-        {sortedPlayers.map((tp, index) => {
-          const player = getPlayer(tp.playerId);
-          const isLeader = index === 0 && tp.totalPoints > 0;
-          return (
-            <View key={tp.playerId} style={[styles.playerCard, isLeader && styles.leaderCard]}>
-              <View style={styles.playerHeader}>
-                <Pressable style={styles.playerInfo} onPress={() => { if (player) { setEditingPlayerId(player.id); setEditPlayerModalVisible(true); } }}>
-                  {isLeader && <Text style={styles.crownEmoji}>👑</Text>}
-                  <PlayerAvatar avatar={player?.avatar ?? "🧑"} size={36} fontSize={22} />
-                  <Text style={styles.playerName}>{player?.name ?? "Unknown"}</Text>
-                </Pressable>
-                <View style={styles.pointsBadge}>
-                  <Text style={styles.pointsValue}>{tp.totalPoints}</Text>
-                  <Text style={styles.pointsLabel}>pts</Text>
-                </View>
-              </View>
-              <View style={styles.animalGrid}>
-                {tripAnimals.map((animal) => {
-                  const count = tp.sightings[animal.id] || 0;
-                  return (
-                    <View key={animal.id} style={styles.animalItem}>
-                      <View style={styles.animalCountRow}>
-                        <Pressable style={({ pressed }) => [styles.undoBtn, pressed && styles.undoBtnPressed, count === 0 && styles.undoBtnDisabled]} onPress={() => handleUndo(tp.playerId, animal.id)} disabled={count === 0}>
-                          <Minus size={12} color={count > 0 ? Colors.brownMuted : Colors.textLight} />
-                        </Pressable>
-                        <Text style={styles.animalCount}>{count}</Text>
-                      </View>
-                      <Pressable style={({ pressed }) => [styles.animalButton, pressed && styles.animalButtonPressed]} onPress={() => handleSighting(tp.playerId, animal.id)}>
-                        {animal.emoji ? (
-                          <Text style={styles.animalEmoji}>{animal.emoji}</Text>
-                        ) : (
-                          <Text style={styles.animalInitial}>{animal.name.charAt(0).toUpperCase()}</Text>
-                        )}
-                        <Text style={styles.animalPts}>+{animal.points}</Text>
-                      </Pressable>
-                      <Text style={styles.animalName}>{animal.name}</Text>
-                    </View>
-                  );
-                })}
-              </View>
-            </View>
-          );
-        })}
+        <PlayerList
+          sortedPlayers={sortedPlayers}
+          tripAnimals={tripAnimals}
+          getPlayer={getPlayer}
+          onSighting={handleSighting}
+          onUndo={handleUndo}
+          onEditPlayer={(playerId) => { setEditingPlayerId(playerId); setEditPlayerModalVisible(true); }}
+        />
       </ScrollView>
       {celebration && (
         <Animated.View style={[styles.celebrationOverlay, { opacity: celebrationOpacity }]} pointerEvents="none">
@@ -740,41 +699,8 @@ export default function ActiveTripScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.primary },
-  header: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingBottom: 14, gap: 12 },
-  headerBack: { padding: 8 },
-  headerCenter: { flex: 1, alignItems: "center" },
-  headerTitle: { fontSize: 18, fontWeight: "700" as const, color: Colors.white },
-  headerLive: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 2 },
-  headerLiveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: "#4ADE80" },
-  headerLiveText: { fontSize: 10, fontWeight: "700" as const, color: "#4ADE80", letterSpacing: 1 },
-  headerActions: { flexDirection: "row", alignItems: "center", gap: 8 },
-  editAnimalsBtn: { padding: 8, backgroundColor: "rgba(255,255,255,0.12)", borderRadius: 10 },
-  endTripBtn: { flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: "rgba(255,255,255,0.12)", paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10 },
-  endTripBtnText: { color: Colors.dangerLight, fontSize: 14, fontWeight: "600" as const },
   scrollView: { flex: 1, backgroundColor: Colors.cream, borderTopLeftRadius: 24, borderTopRightRadius: 24 },
   scrollContent: { padding: 16, gap: 16 },
-  playerCard: { backgroundColor: Colors.white, borderRadius: 18, padding: 18, borderWidth: 1, borderColor: Colors.border },
-  leaderCard: { borderColor: Colors.accent, borderWidth: 2, shadowColor: Colors.accent, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 3 },
-  playerHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 },
-  playerInfo: { flexDirection: "row", alignItems: "center", gap: 8 },
-  crownEmoji: { fontSize: 18 },
-  playerAvatar: { fontSize: 28 },
-  playerName: { fontSize: 18, fontWeight: "700" as const, color: Colors.brown },
-  pointsBadge: { backgroundColor: Colors.primary, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 14, flexDirection: "row", alignItems: "baseline", gap: 4 },
-  pointsValue: { fontSize: 22, fontWeight: "800" as const, color: Colors.white },
-  pointsLabel: { fontSize: 12, color: Colors.accentLight, fontWeight: "600" as const },
-  animalGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "center" },
-  animalItem: { alignItems: "center", minWidth: 72 },
-  animalCountRow: { flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 4 },
-  undoBtn: { padding: 4, borderRadius: 8, backgroundColor: Colors.cream },
-  undoBtnPressed: { backgroundColor: Colors.creamDark },
-  undoBtnDisabled: { opacity: 0.4 },
-  animalCount: { fontSize: 15, fontWeight: "700" as const, color: Colors.brown, minWidth: 18, textAlign: "center" },
-  animalButton: { width: 64, height: 64, borderRadius: 16, backgroundColor: Colors.cream, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: Colors.border },
-  animalButtonPressed: { backgroundColor: Colors.primaryLight, borderColor: Colors.primaryLight, transform: [{ scale: 0.92 }] },
-  animalEmoji: { fontSize: 28 },
-  animalPts: { fontSize: 11, fontWeight: "700" as const, color: Colors.primary, marginTop: 1 },
-  animalName: { fontSize: 11, color: Colors.brownMuted, marginTop: 4, fontWeight: "500" as const },
   noTrip: { flex: 1, alignItems: "center", justifyContent: "center" },
   noTripText: { fontSize: 18, color: Colors.cream, marginBottom: 16 },
   backBtn: { backgroundColor: "rgba(255,255,255,0.15)", paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12 },
@@ -814,7 +740,6 @@ const styles = StyleSheet.create({
   noEmojiToggleText: { fontSize: 13, fontWeight: "600" as const, color: Colors.primaryLight, textDecorationLine: "underline" as const },
   noEmojiListIcon: { width: 32, height: 32, borderRadius: 10, backgroundColor: Colors.primaryLight, alignItems: "center" as const, justifyContent: "center" as const },
   noEmojiListIconText: { fontSize: 16, fontWeight: "700" as const, color: Colors.white },
-  animalInitial: { fontSize: 16, fontWeight: "700" as const, color: Colors.primaryLight },
   emojiGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8, justifyContent: "center", backgroundColor: Colors.white, padding: 12, borderRadius: 14, borderWidth: 1, borderColor: Colors.border },
   emojiOption: { width: 44, height: 44, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: Colors.cream },
   emojiOptionSelected: { backgroundColor: Colors.accentLight, borderWidth: 2, borderColor: Colors.accent },
