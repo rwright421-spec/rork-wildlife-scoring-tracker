@@ -2,6 +2,7 @@ import { useRouter } from "expo-router";
 import { Check, Crown, Pencil, Plus, Trash2, UserPlus, X } from "lucide-react-native";
 import React, { useCallback, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Pressable,
   ScrollView,
@@ -13,6 +14,7 @@ import {
 
 import Colors from "@/constants/colors";
 import { AVATAR_OPTIONS, ANIMAL_EMOJI_OPTIONS } from "@/constants/animals";
+import { FREE_PLAYER_LIMIT, FREE_CUSTOM_ANIMAL_LIMIT } from "@/constants/limits";
 import { useGame } from "@/providers/GameProvider";
 import { usePurchases } from "@/providers/PurchaseProvider";
 import { Player, Trip } from "@/types";
@@ -23,7 +25,7 @@ import PlayerAvatar from "@/components/PlayerAvatar";
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const { isPremium } = usePurchases();
+  const { isPremium, restorePurchases, isRestoring, restoreSuccess } = usePurchases();
   const game = useGame();
   const { players, animals, addPlayer, updatePlayer, removePlayer, addAnimal, removeAnimal, editAnimal } = game;
   const gameState = game;
@@ -73,10 +75,23 @@ export default function SettingsScreen() {
     return existing ? `An animal named "${existing.name}" already exists.` : "";
   }, [animals]);
 
+  const customAnimalCount = React.useMemo(() => animals.filter((a) => !a.isDefault).length, [animals]);
+
   const handleAddPlayer = useCallback(() => {
     const name = newPlayerName.trim();
     if (!name) {
       Alert.alert("Name Required", "Please enter a name for the player.");
+      return;
+    }
+    if (!isPremium && players.length >= FREE_PLAYER_LIMIT) {
+      Alert.alert(
+        "Player Limit Reached",
+        `Free accounts can add up to ${FREE_PLAYER_LIMIT} players. Upgrade to Pro for unlimited players!`,
+        [
+          { text: "Not Now", style: "cancel" },
+          { text: "Upgrade", onPress: () => router.push("/paywall") },
+        ]
+      );
       return;
     }
     addPlayer(name, selectedAvatar);
@@ -141,6 +156,17 @@ export default function SettingsScreen() {
     }
     if (points > 1000) {
       Alert.alert("Invalid Points", "Points must be between 1 and 1000.");
+      return;
+    }
+    if (!isPremium && customAnimalCount >= FREE_CUSTOM_ANIMAL_LIMIT) {
+      Alert.alert(
+        "Custom Animal Limit",
+        "Free accounts cannot add custom animals. Upgrade to Pro for unlimited custom animals!",
+        [
+          { text: "Not Now", style: "cancel" },
+          { text: "Upgrade", onPress: () => router.push("/paywall") },
+        ]
+      );
       return;
     }
     addAnimal(name, emoji, points);
@@ -473,6 +499,33 @@ export default function SettingsScreen() {
           </View>
         ))}
       </View>
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Purchases</Text>
+        <Pressable
+          style={({ pressed }) => [
+            styles.restorePurchaseBtn,
+            pressed && styles.restorePurchaseBtnPressed,
+          ]}
+          onPress={() => {
+            restorePurchases();
+          }}
+          disabled={isRestoring}
+        >
+          {isRestoring ? (
+            <ActivityIndicator color={Colors.primary} size="small" />
+          ) : (
+            <Text style={styles.restorePurchaseBtnText}>
+              {restoreSuccess ? "Purchases Restored!" : "Restore Purchases"}
+            </Text>
+          )}
+        </Pressable>
+        {isPremium && (
+          <View style={styles.premiumBadge}>
+            <Crown size={16} color={Colors.gold} />
+            <Text style={styles.premiumBadgeText}>Wildlife Tracker Pro Active</Text>
+          </View>
+        )}
+      </View>
     </ScrollView>
     <KeyboardAccessory />
     <EditPlayerModal
@@ -730,5 +783,37 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "600" as const,
     color: Colors.white,
+  },
+  restorePurchaseBtn: {
+    backgroundColor: Colors.white,
+    borderRadius: 14,
+    padding: 16,
+    alignItems: "center" as const,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    marginBottom: 12,
+  },
+  restorePurchaseBtnPressed: {
+    backgroundColor: Colors.creamDark,
+  },
+  restorePurchaseBtnText: {
+    fontSize: 15,
+    fontWeight: "600" as const,
+    color: Colors.primary,
+  },
+  premiumBadge: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 8,
+    backgroundColor: "#FFFBEB",
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: "#FDE68A",
+  },
+  premiumBadgeText: {
+    fontSize: 14,
+    fontWeight: "600" as const,
+    color: Colors.brown,
   },
 });

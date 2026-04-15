@@ -6,7 +6,9 @@ import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, Vi
 
 import Colors from "@/constants/colors";
 import { ANIMAL_EMOJI_OPTIONS, AVATAR_OPTIONS } from "@/constants/animals";
+import { FREE_PLAYER_LIMIT, FREE_CUSTOM_ANIMAL_LIMIT } from "@/constants/limits";
 import { useGame } from "@/providers/GameProvider";
+import { usePurchases } from "@/providers/PurchaseProvider";
 import { Animal, Player } from "@/types";
 import { KeyboardAccessory, KEYBOARD_ACCESSORY_ID } from "@/components/KeyboardDoneBar";
 import AvatarPicker from "@/components/AvatarPicker";
@@ -18,6 +20,7 @@ function generateId(): string {
 
 export default function NewTripScreen() {
   const { players, animals, startTrip, addPlayer } = useGame();
+  const { isPremium } = usePurchases();
   const params = useLocalSearchParams<{ repeatPlayerIds?: string; repeatAnimals?: string }>();
 
   const [step, setStep] = useState<number>(1);
@@ -96,6 +99,17 @@ export default function NewTripScreen() {
       Alert.alert("Name Required", "Please enter a name for the player.");
       return;
     }
+    if (!isPremium && players.length >= FREE_PLAYER_LIMIT) {
+      Alert.alert(
+        "Player Limit Reached",
+        `Free accounts can add up to ${FREE_PLAYER_LIMIT} players. Upgrade to Pro for unlimited players!`,
+        [
+          { text: "Not Now", style: "cancel" },
+          { text: "Upgrade", onPress: () => router.push("/paywall") },
+        ]
+      );
+      return;
+    }
     const player = addPlayer(name, newPlayerAvatar);
     setSelectedPlayerIds((prev) => [...prev, player.id]);
     setNewPlayerName("");
@@ -138,12 +152,25 @@ export default function NewTripScreen() {
     setTimeout(() => { router.push({ pathname: "/active-trip", params: { tripId: newTripId } }); }, 300);
   }, [tripName, selectedPlayerIds, tripAnimals, startTrip]);
 
+  const customTripAnimalCount = useMemo(() => tripAnimals.filter((a) => !a.isDefault).length, [tripAnimals]);
+
   const handleAddAnimal = useCallback(() => {
     const name = newAnimalName.trim();
     const points = parseInt(newAnimalPoints, 10);
     if (!name) { Alert.alert("Missing Info", "Please enter a name for the animal."); return; }
     if (isNaN(points) || points < 1) { Alert.alert("Invalid Points", "Points must be between 1 and 1000."); return; }
     if (points > 1000) { Alert.alert("Invalid Points", "Points must be between 1 and 1000."); return; }
+    if (!isPremium && customTripAnimalCount >= FREE_CUSTOM_ANIMAL_LIMIT) {
+      Alert.alert(
+        "Custom Animal Limit",
+        "Free accounts cannot add custom animals. Upgrade to Pro for unlimited custom animals!",
+        [
+          { text: "Not Now", style: "cancel" },
+          { text: "Upgrade", onPress: () => router.push("/paywall") },
+        ]
+      );
+      return;
+    }
     const animal: Animal = { id: generateId(), name, emoji: newAnimalEmoji, points, isDefault: false };
     setTripAnimals((prev) => [...prev, animal]);
     setNewAnimalName("");

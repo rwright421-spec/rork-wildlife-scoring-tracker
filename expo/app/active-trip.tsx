@@ -6,10 +6,12 @@ import { Alert, Animated, FlatList, Modal, Platform, Pressable, ScrollView, Styl
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ANIMAL_EMOJI_OPTIONS, AVATAR_OPTIONS } from "@/constants/animals";
+import { FREE_PLAYER_LIMIT, FREE_CUSTOM_ANIMAL_LIMIT } from "@/constants/limits";
 import { Animal, Player } from "@/types";
 
 import Colors from "@/constants/colors";
 import { useGame } from "@/providers/GameProvider";
+import { usePurchases } from "@/providers/PurchaseProvider";
 import { KeyboardAccessory, KEYBOARD_ACCESSORY_ID } from "@/components/KeyboardDoneBar";
 import AvatarPicker from "@/components/AvatarPicker";
 import EditPlayerModal from "@/components/EditPlayerModal";
@@ -32,6 +34,7 @@ export default function ActiveTripScreen() {
   const insets = useSafeAreaInsets();
   const { tripId } = useLocalSearchParams<{ tripId: string }>();
   const { activeTrips, getTrip, getPlayer, getTripAnimals, recordSighting, undoSighting, updateTripAnimal, addTripAnimal, removeTripAnimal, players, addPlayer, updatePlayer, addPlayerToTrip, removePlayerFromTrip, deleteTrip } = useGame();
+  const { isPremium } = usePurchases();
   const [editPlayerModalVisible, setEditPlayerModalVisible] = useState<boolean>(false);
   const [editingPlayerId, setEditingPlayerId] = useState<string | null>(null);
 
@@ -226,6 +229,17 @@ export default function ActiveTripScreen() {
     if (!currentTrip) return;
     const name = newPlayerName.trim();
     if (!name) { Alert.alert("Missing name", "Please enter a player name."); return; }
+    if (!isPremium && players.length >= FREE_PLAYER_LIMIT) {
+      Alert.alert(
+        "Player Limit Reached",
+        `Free accounts can add up to ${FREE_PLAYER_LIMIT} players. Upgrade to Pro for unlimited players!`,
+        [
+          { text: "Not Now", style: "cancel" },
+          { text: "Upgrade", onPress: () => router.push("/paywall") },
+        ]
+      );
+      return;
+    }
     setPlayerNameWarning("");
     if (Platform.OS !== "web") { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); }
     const newPlayer = addPlayer(name, newPlayerAvatar);
@@ -265,6 +279,8 @@ export default function ActiveTripScreen() {
     setShowEmojiPicker(false);
   }, []);
 
+  const customTripAnimalCount = useMemo(() => tripAnimals.filter((a) => !a.isDefault).length, [tripAnimals]);
+
   const saveEdit = useCallback(() => {
     if (!currentTrip) return;
     const name = editName.trim();
@@ -272,6 +288,17 @@ export default function ActiveTripScreen() {
     if (!name) { Alert.alert("Missing name", "Please enter an animal name."); return; }
     if (isNaN(pts) || pts < 1) { Alert.alert("Invalid points", "Points must be between 1 and 1000."); return; }
     if (pts > 1000) { Alert.alert("Invalid points", "Points must be between 1 and 1000."); return; }
+    if (isAddingNew && !isPremium && customTripAnimalCount >= FREE_CUSTOM_ANIMAL_LIMIT) {
+      Alert.alert(
+        "Custom Animal Limit",
+        "Free accounts cannot add custom animals. Upgrade to Pro for unlimited custom animals!",
+        [
+          { text: "Not Now", style: "cancel" },
+          { text: "Upgrade", onPress: () => router.push("/paywall") },
+        ]
+      );
+      return;
+    }
     if (Platform.OS !== "web") { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }
     if (isAddingNew) {
       addTripAnimal(currentTrip.id, name, editEmoji, pts);

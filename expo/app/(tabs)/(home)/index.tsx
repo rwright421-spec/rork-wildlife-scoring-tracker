@@ -3,6 +3,7 @@ import * as Haptics from "expo-haptics";
 import { Clock, MapPin, Play, Plus, Repeat, Trophy } from "lucide-react-native";
 import React, { useCallback, useMemo } from "react";
 import {
+  Alert,
   Platform,
   Pressable,
   ScrollView,
@@ -12,7 +13,9 @@ import {
 } from "react-native";
 
 import Colors from "@/constants/colors";
+import { FREE_TRIP_LIMIT } from "@/constants/limits";
 import { useGame } from "@/providers/GameProvider";
+import { usePurchases } from "@/providers/PurchaseProvider";
 import { Trip } from "@/types";
 import PlayerAvatar from "@/components/PlayerAvatar";
 
@@ -30,6 +33,7 @@ function formatDuration(startDate: string): string {
 
 export default function HomeScreen() {
   const { activeTrips, completedTrips, players, getPlayer } = useGame();
+  const { isPremium } = usePurchases();
 
   const lastCompletedTrip = useMemo(() => completedTrips[0] ?? null, [completedTrips]);
 
@@ -42,13 +46,26 @@ export default function HomeScreen() {
     return { playerNames, animalCount };
   }, [lastCompletedTrip, getPlayer]);
 
+  const totalTripCount = useMemo(() => activeTrips.length + completedTrips.length, [activeTrips, completedTrips]);
+
   const handleStartTrip = useCallback(() => {
     if (players.length < 2) {
       router.push("/settings");
       return;
     }
+    if (!isPremium && totalTripCount >= FREE_TRIP_LIMIT) {
+      Alert.alert(
+        "Trip Limit Reached",
+        `Free accounts can create up to ${FREE_TRIP_LIMIT} trips. Upgrade to Pro for unlimited trips!`,
+        [
+          { text: "Not Now", style: "cancel" },
+          { text: "Upgrade", onPress: () => router.push("/paywall") },
+        ]
+      );
+      return;
+    }
     router.push("/new-trip");
-  }, [players.length]);
+  }, [players.length, isPremium, totalTripCount]);
 
   const handleRepeatLastTrip = useCallback(() => {
     if (!lastCompletedTrip) return;
