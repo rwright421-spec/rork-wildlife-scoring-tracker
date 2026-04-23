@@ -55,14 +55,19 @@ function SwipeableTripCard({ trip, onDelete, children }: { trip: Trip; onDelete:
     onDelete(trip);
   }, [trip, onDelete, closeSwipe]);
 
+  const deleteTranslateX = translateX.interpolate({
+    inputRange: [-DELETE_BTN_WIDTH, 0],
+    outputRange: [0, DELETE_BTN_WIDTH],
+    extrapolate: "clamp",
+  });
+  const deleteOpacity = translateX.interpolate({
+    inputRange: [-DELETE_BTN_WIDTH, 0],
+    outputRange: [1, 0],
+    extrapolate: "clamp",
+  });
+
   return (
     <View style={swipeStyles.wrapper}>
-      <View style={swipeStyles.deleteBackground}>
-        <Pressable onPress={handleDeletePress} style={swipeStyles.deleteBtn} accessibilityRole="button" accessibilityLabel={`Delete trip ${trip.name}`}>
-          <Trash2 size={20} color={Colors.white} />
-          <Text style={swipeStyles.deleteBtnText}>Delete</Text>
-        </Pressable>
-      </View>
       <Animated.View
         style={{ transform: [{ translateX }] }}
         {...panResponder.panHandlers}
@@ -83,6 +88,18 @@ function SwipeableTripCard({ trip, onDelete, children }: { trip: Trip; onDelete:
           accessibilityHint="Tap to view details, long press to delete"
         >
           {children}
+        </Pressable>
+      </Animated.View>
+      <Animated.View
+        pointerEvents="box-none"
+        style={[
+          swipeStyles.deleteBackground,
+          { opacity: deleteOpacity, transform: [{ translateX: deleteTranslateX }] },
+        ]}
+      >
+        <Pressable onPress={handleDeletePress} style={swipeStyles.deleteBtn} accessibilityRole="button" accessibilityLabel={`Delete trip ${trip.name}`}>
+          <Trash2 size={20} color={Colors.white} />
+          <Text style={swipeStyles.deleteBtnText}>Delete</Text>
         </Pressable>
       </Animated.View>
     </View>
@@ -205,7 +222,6 @@ export default function HistoryScreen() {
 const swipeStyles = StyleSheet.create({
   wrapper: {
     marginBottom: 14,
-    overflow: "hidden",
     borderRadius: 16,
   },
   deleteBackground: {
@@ -219,6 +235,8 @@ const swipeStyles = StyleSheet.create({
     borderBottomRightRadius: 16,
     alignItems: "center",
     justifyContent: "center",
+    zIndex: 2,
+    elevation: 4,
   },
   deleteBtn: {
     flex: 1,
