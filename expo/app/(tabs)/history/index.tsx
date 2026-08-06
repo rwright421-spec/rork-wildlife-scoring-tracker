@@ -91,10 +91,9 @@ function SwipeableTripCard({ trip, onDelete, children }: { trip: Trip; onDelete:
         </Pressable>
       </Animated.View>
       <Animated.View
-        pointerEvents="box-none"
         style={[
           swipeStyles.deleteBackground,
-          { opacity: deleteOpacity, transform: [{ translateX: deleteTranslateX }] },
+          { opacity: deleteOpacity, transform: [{ translateX: deleteTranslateX }], pointerEvents: "box-none" as const },
         ]}
       >
         <Pressable onPress={handleDeletePress} style={swipeStyles.deleteBtn} accessibilityRole="button" accessibilityLabel={`Delete trip ${trip.name}`}>

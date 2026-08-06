@@ -8,6 +8,7 @@ import Colors from "@/constants/colors";
 import { ANIMAL_EMOJI_OPTIONS, AVATAR_OPTIONS, NO_EMOJI, getNameForEmoji } from "@/constants/animals";
 import { ANIMAL_POINTS_MIN, ANIMAL_POINTS_MAX } from "@/constants/config";
 import { FREE_PLAYER_LIMIT, FREE_CUSTOM_ANIMAL_LIMIT } from "@/constants/limits";
+import { INPUT_LIMITS } from "@/utils/sanitize";
 import { useGame } from "@/providers/GameProvider";
 import { usePurchases } from "@/providers/PurchaseProvider";
 import { Animal, Player } from "@/types";

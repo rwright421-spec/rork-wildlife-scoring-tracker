@@ -100,8 +100,12 @@ export default function ActiveTripScreen() {
 
   const sortedPlayers = useMemo(() => {
     if (!currentTrip) return [];
-    return [...currentTrip.players].sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''));
-  }, [currentTrip]);
+    return [...currentTrip.players].sort((a, b) => {
+      const nameA = getPlayer(a.playerId)?.name ?? '';
+      const nameB = getPlayer(b.playerId)?.name ?? '';
+      return nameA.localeCompare(nameB);
+    });
+  }, [currentTrip, getPlayer]);
 
   const showSnackbar = useCallback((action: LastAction) => {
     if (snackbarTimer.current) clearTimeout(snackbarTimer.current);
